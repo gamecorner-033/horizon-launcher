@@ -297,21 +297,13 @@ impl Panorama {
     /// Ready a title screen frame: the cube, made if it is not on the GPU.
     pub(super) fn prepare(
         &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        width: u32,
-        height: u32,
-        yaw: f32,
-        pitch: f32,
+        _device: &wgpu::Device,
+        _queue: &wgpu::Queue,
+        _width: u32,
+        _height: u32,
+        _yaw: f32,
+        _pitch: f32,
     ) {
-        queue.write_buffer(
-            &self.uniform,
-            0,
-            bytemuck::cast_slice(&projection(width, height, yaw, pitch).to_cols_array()),
-        );
-        if self.cube.is_none() {
-            self.cube = Some(self.cube(device, queue));
-        }
     }
 
     /// Give the cube's video memory back: no frame draws it until the title
@@ -320,58 +312,9 @@ impl Panorama {
         self.cube = None;
     }
 
-    fn cube(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::BindGroup {
-        let texture = device.create_texture_with_data(
-            queue,
-            &wgpu::TextureDescriptor {
-                label: Some("Title panorama cube"),
-                size: wgpu::Extent3d {
-                    width: self.faces.size,
-                    height: self.faces.size,
-                    depth_or_array_layers: 6,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            },
-            wgpu::util::TextureDataOrder::LayerMajor,
-            &self.faces.texels(),
-        );
-        let view = texture.create_view(&wgpu::TextureViewDescriptor {
-            dimension: Some(wgpu::TextureViewDimension::Cube),
-            ..Default::default()
-        });
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Title panorama resources"),
-            layout: &self.layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: self.uniform.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&self.sampler),
-                },
-            ],
-        })
-    }
-
     /// Draw the cube `prepare` made for this frame.
-    pub(super) fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
-        let Some(cube) = &self.cube else {
-            return;
-        };
-        pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, cube, &[]);
-        pass.draw(0..36, 0..1);
+    pub(super) fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {
+        // Disabled: basic text/flat menu for handheld performance
     }
 }
 

@@ -227,6 +227,8 @@ impl Opt {
             Opt::Clouds => "options.renderClouds",
             Opt::CloudRange => "options.renderCloudsDistance",
             Opt::Particles => "options.particles",
+            Opt::BlockBreakParticles => "options.blockBreakParticles",
+            Opt::PotatoPreset => "horizon.options.potato_preset",
             Opt::EntityDistance => "options.entityDistanceScaling",
             Opt::EntityShadows => "options.entityShadows",
             Opt::BiomeBlend => "options.biomeBlendRadius",
@@ -344,7 +346,7 @@ impl Opt {
                 2.0,
                 crate::options_file::MAX_RENDER_DISTANCE as f32,
             ),
-            Opt::SimulationDistance => unit(s.simulation_distance as f32, 5.0, 32.0),
+            Opt::SimulationDistance => unit(s.simulation_distance as f32, 2.0, 32.0),
             Opt::Sensitivity => Kind::Slider(s.sensitivity),
             Opt::WheelSensitivity => unit(s.mouse_wheel_sensitivity, 0.01, 10.0),
             Opt::Volume(i) => Kind::Slider(if i == 0 {
@@ -510,6 +512,13 @@ impl Opt {
                 };
                 generic(c, value)
             }
+            Opt::BlockBreakParticles => {
+                Text::translate(
+                    "options.generic_value",
+                    &[Text::literal("Block Break Animation"), on_off(s.block_break_particles)],
+                )
+            }
+            Opt::PotatoPreset => Text::literal("Potato Preset (Restore 30 FPS)"),
             Opt::Fov => match s.fov as i32 {
                 70 => generic(c, tr("options.fov.min")),
                 110 => generic(c, tr("options.fov.max")),
@@ -880,7 +889,7 @@ impl Opt {
                 s.render_distance =
                     step(2.0, crate::options_file::MAX_RENDER_DISTANCE as f32) as i32
             }
-            Opt::SimulationDistance => s.simulation_distance = step(5.0, 32.0) as i32,
+            Opt::SimulationDistance => s.simulation_distance = step(2.0, 32.0) as i32,
             Opt::Sensitivity => s.sensitivity = v,
             Opt::WheelSensitivity => s.mouse_wheel_sensitivity = 0.01 + v * 9.99,
             Opt::Volume(0) => s.master_volume = v,
@@ -1055,6 +1064,8 @@ impl Opt {
                 s.clouds = order[usize::from(next(i, 3))].into();
             }
             Opt::Particles => s.particles = next(s.particles, 3),
+            Opt::BlockBreakParticles => s.block_break_particles = !s.block_break_particles,
+            Opt::PotatoPreset => apply_potato_preset(s),
             Opt::EntityShadows => s.entity_shadows = !s.entity_shadows,
             Opt::Vignette => s.vignette = !s.vignette,
             Opt::Autosave => s.autosave_indicator = !s.autosave_indicator,
@@ -1123,7 +1134,16 @@ impl Opt {
             }
             Opt::ForceUnicode => s.force_unicode = !s.force_unicode,
             Opt::JapaneseGlyphs => s.japanese_glyphs = !s.japanese_glyphs,
-            Opt::PadEnabled => s.controller.enabled = !s.controller.enabled,
+            Opt::PadEnabled => {
+                #[cfg(target_arch = "aarch64")]
+                {
+                    s.controller.enabled = true;
+                }
+                #[cfg(not(target_arch = "aarch64"))]
+                {
+                    s.controller.enabled = !s.controller.enabled;
+                }
+            }
             Opt::PadVibration => s.controller.vibration = !s.controller.vibration,
             Opt::PadAdaptiveTriggers => {
                 s.controller.adaptive_triggers = !s.controller.adaptive_triggers
@@ -1192,10 +1212,40 @@ fn drag_slider(opt: Opt, s: &mut Settings, v: f32, events: &mut Vec<Event>) {
         events.push(Event::Volume(source, after));
     }
 }
+pub fn apply_potato_preset(s: &mut Settings) {
+    s.graphics_preset = "potato".into();
+    s.biome_blend = 0;
+    s.render_distance = 2;
+    s.prioritize_chunk_updates = 0;
+    s.simulation_distance = 2;
+    s.smooth_lighting = false;
+    s.clouds = "false".into();
+    s.particles = 2;
+    s.block_break_particles = false;
+    s.mipmap_levels = 0;
+    s.entity_shadows = false;
+    s.entity_distance = 0.5;
+    s.menu_blur = 0;
+    s.cloud_range = 2;
+    s.cutout_leaves = false;
+    s.improved_transparency = false;
+    s.weather_radius = 3;
+    s.vignette = false;
+    s.max_fps = 30;
+    s.chunk_fade = 0.0;
+    s.vsync = false;
+    s.controller.enabled = true;
+    set_filtering(s, 1, 0);
+    s.horizon.preset = crate::graphics::Preset::Potato;
+}
+
 /// GraphicsPreset.apply: the options Fast, Fancy and Fabulous set.
 pub fn apply_preset(s: &mut Settings) {
     let fabulous = s.graphics_preset == "fabulous";
     match s.graphics_preset.as_str() {
+        "potato" => {
+            apply_potato_preset(s);
+        }
         "fast" => {
             s.biome_blend = 1;
             s.render_distance = 8;
@@ -2759,10 +2809,36 @@ impl OptionsUi {
                 rows
             }
             Page::Video => {
-                // Vanilla's VideoSettingsScreen as vanilla lays it out. No menu opens it (Video
-                // Settings... opens the graphics screen, which has all of it); it stays for
-                // `horizon-ctl options video-vanilla` and the tests that pin vanilla's screen.
-                let mut rows = vec![Row::Header("options.video.display.header")];
+                // Horizon's graphics screens, Simple and Advanced.
+                let mut rows = vec![
+                    Row::Buttons(
+                        button(
+                            0.0,
+                            0.0,
+                            310.0,
+                            Text::literal("Potato Preset (Restore 30 FPS)"),
+                            Act::Cycle(Opt::PotatoPreset),
+                        ),
+                        None,
+                    ),
+                    Row::Buttons(
+                        button(
+                            0.0,
+                            0.0,
+                            150.0,
+                            tr("horizon.pages.open.horizon_graphics"),
+                            Act::Push(Page::Graphics),
+                        ),
+                        Some(button(
+                            0.0,
+                            0.0,
+                            150.0,
+                            tr("horizon.pages.open.graphics_advanced"),
+                            Act::Push(Page::GraphicsAdvanced),
+                        )),
+                    ),
+                ];
+                rows.push(Row::Header("options.video.display.header"));
                 rows.push(Row::Big(Opt::ExclusiveMode));
                 rows.extend(pairs(&[
                     Opt::MaxFps,
@@ -2784,6 +2860,7 @@ impl OptionsUi {
                     Opt::SmoothLighting,
                     Opt::Clouds,
                     Opt::Particles,
+                    Opt::BlockBreakParticles,
                     Opt::Mipmaps,
                     Opt::EntityShadows,
                     Opt::EntityDistance,
@@ -6495,6 +6572,26 @@ mod tests {
             vec![Event::Changed]
         );
         assert_eq!(ui.page(), Page::Horizon);
+    }
+
+    #[test]
+    fn potato_preset_applies_low_end_device_settings() {
+        let mut s = Settings::default();
+        s.render_distance = 12;
+        s.simulation_distance = 10;
+        s.clouds = "true".into();
+        s.particles = 0;
+        s.block_break_particles = true;
+        s.controller.enabled = false;
+        apply_potato_preset(&mut s);
+        assert_eq!(s.graphics_preset, "potato");
+        assert_eq!(s.render_distance, 2);
+        assert_eq!(s.simulation_distance, 2);
+        assert_eq!(s.clouds, "false");
+        assert_eq!(s.particles, 2);
+        assert_eq!(s.block_break_particles, false);
+        assert_eq!(s.max_fps, 30);
+        assert_eq!(s.controller.enabled, true);
     }
 
     #[test]

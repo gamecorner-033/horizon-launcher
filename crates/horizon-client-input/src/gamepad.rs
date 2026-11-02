@@ -815,6 +815,19 @@ pub fn eight_direction_keys([left, forward]: [f32; 2]) -> [bool; 4] {
     ]
 }
 
+/// Stick axes for muOS-Keys (Anbernic H700, vendor/product 1/1) under gilrs'
+/// driver mapping. The device has no ABS_X/ABS_Y: its sticks are the first four
+/// absolute axes SDL calls a0..a3, which are evdev ABS_Z, ABS_RX (left stick)
+/// and ABS_RY, ABS_RZ (right stick). gilrs names those LeftZ, RightStickX,
+/// RightStickY and RightZ, and flips only RightStickY (it thinks it is a Y).
+/// Arguments are the raw gilrs values of those four axes; the result is
+/// `(left, right)` with Y up-positive like every other pad.
+pub fn muos_stick_axes(left_z: f32, right_x: f32, right_y: f32, right_z: f32) -> ([f32; 2], [f32; 2]) {
+    // evdev Y grows downwards: un-flip ABS_RX/ABS_RZ; ABS_RY (right stick X)
+    // arrives already negated by gilrs, so negate it back.
+    ([left_z, -right_x], [-right_y, -right_z])
+}
+
 /// A radial deadzone: inside it the stick is centred; beyond it the rest of
 /// the travel is rescaled to 0..1 in the same direction, so diagonals aren't
 /// clipped and the first movement past the deadzone is small.
@@ -1917,6 +1930,14 @@ bind_key.hotbar.2:north
             eight_direction_keys([0.0, 0.31]),
             [true, false, false, false]
         );
+    }
+
+    #[test]
+    fn muos_keys_axes_without_sdl() {
+        // LeftZ, RightStickX, RightStickY, RightZ = ABS_Z, ABS_RX, ABS_RY, ABS_RZ.
+        let (left, right) = muos_stick_axes(-0.5, 0.3, 0.4, 0.6);
+        assert_eq!(left, [-0.5, -0.3], "Left stick (movement) on ABS_Z, ABS_RX");
+        assert_eq!(right, [-0.4, -0.6], "Right stick (camera) on ABS_RY, ABS_RZ");
     }
 
     #[test]

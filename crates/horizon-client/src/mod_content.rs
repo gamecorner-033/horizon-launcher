@@ -2207,7 +2207,24 @@ fn out_path(overlay: &Overlay<'_>, rel: &str) -> PathBuf {
 }
 #[cfg(unix)]
 fn link(target: &Path, at: &Path) -> std::io::Result<()> {
-    std::os::unix::fs::symlink(target, at)
+    if std::os::unix::fs::symlink(target, at).is_ok() {
+        if let Ok(meta) = fs::symlink_metadata(at) {
+            if meta.file_type().is_symlink() {
+                return Ok(());
+            }
+        }
+        let _ = fs::remove_file(at);
+        let _ = fs::remove_dir_all(at);
+    }
+    if target.is_dir() {
+        fs::create_dir_all(at)?;
+        for entry in fs::read_dir(target)?.flatten() {
+            link(&entry.path(), &at.join(entry.file_name()))?;
+        }
+        Ok(())
+    } else {
+        fs::copy(target, at).map(|_| ())
+    }
 }
 #[cfg(not(unix))]
 fn link(target: &Path, at: &Path) -> std::io::Result<()> {

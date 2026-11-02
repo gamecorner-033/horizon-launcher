@@ -121,6 +121,7 @@ static TABLE: LazyLock<Vec<Def>> = LazyLock::new(|| {
     let pb = |key: &str, d: bool| def(key, PB, V::Bool(d));
     let mut t = vec![
         b("ao", true),
+        b("blockBreakParticles", false),
         i("biomeBlendRadius", 0, 7, 2),
         def(
             "chunkSectionFadeInTime",
@@ -163,7 +164,7 @@ static TABLE: LazyLock<Vec<Def>> = LazyLock::new(|| {
         def("renderClouds", O(Clouds), V::Int(2)),
         i("cloudRange", 2, 128, 128),
         i("renderDistance", 2, MAX_RENDER_DISTANCE, 12),
-        i("simulationDistance", 5, 32, 12),
+        i("simulationDistance", 2, 32, 12),
         u("screenEffectScale", 1.0),
         def("soundDevice", O(AnyStr), V::Str(String::new())),
         b("vignette", true),

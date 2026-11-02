@@ -4227,7 +4227,7 @@ impl Game<'_> {
     }
     /// ClientLevel.addDestroyBlockEffect: a burst per outline box.
     fn destroy_particles(&mut self, pos: [i32; 3], state: BlockStateId) {
-        if self.settings.extras.hide_block_particles {
+        if self.settings.extras.hide_block_particles || !self.settings.block_break_particles {
             return;
         }
         let Some((sprite, tint)) = self.particle_sprite(state, pos) else {
@@ -4241,7 +4241,7 @@ impl Game<'_> {
     }
     /// ClientLevel.addBreakingParticles: one crumb on the face being mined.
     fn crack_particle(&mut self, pos: [i32; 3], face: [i32; 3], state: BlockStateId) {
-        if self.settings.extras.hide_block_particles {
+        if self.settings.extras.hide_block_particles || !self.settings.block_break_particles {
             return;
         }
         let Some((sprite, tint)) = self.particle_sprite(state, pos) else {
@@ -8654,6 +8654,9 @@ impl Game<'_> {
     /// An agent moving the mouse (`mouse-move`) counts as a grabbed pointer in
     /// an active window, as it cannot grab the real one.
     fn apply_mouse_look(&mut self) {
+        if self.pad.in_use {
+            return;
+        }
         let look = self.look_options();
         let time = self.started.elapsed().as_secs_f64();
         let pointer = self.captured || self.agent_pointer;
@@ -19830,16 +19833,18 @@ impl Game<'_> {
                         && self.book.is_none()
                         && !self.dialog_open()
                     {
-                        let turn = |k| f32::from(u8::from(self.keys.raw(&k)));
-                        let secs = elapsed.as_secs_f32().min(0.1);
-                        let yaw = (turn(KeyCode::ArrowRight) - turn(KeyCode::ArrowLeft)) * 90.0;
-                        let pitch = (turn(KeyCode::ArrowDown) - turn(KeyCode::ArrowUp)) * 90.0;
-                        if yaw != 0.0 || pitch != 0.0 {
-                            // 90 degrees a second, as `Entity.turn` degrees.
-                            self.turn_player(
-                                f64::from(yaw * secs / 0.15),
-                                f64::from(pitch * secs / 0.15),
-                            );
+                        if !self.pad.in_use {
+                            let turn = |k| f32::from(u8::from(self.keys.raw(&k)));
+                            let secs = elapsed.as_secs_f32().min(0.1);
+                            let yaw = (turn(KeyCode::ArrowRight) - turn(KeyCode::ArrowLeft)) * 90.0;
+                            let pitch = (turn(KeyCode::ArrowDown) - turn(KeyCode::ArrowUp)) * 90.0;
+                            if yaw != 0.0 || pitch != 0.0 {
+                                // 90 degrees a second, as `Entity.turn` degrees.
+                                self.turn_player(
+                                    f64::from(yaw * secs / 0.15),
+                                    f64::from(pitch * secs / 0.15),
+                                );
+                            }
                         }
                     }
                     if self.title.is_none() {
@@ -22569,10 +22574,10 @@ fn start_game<'a>(
             .with_user(|| game.options.player_name());
             title.last_server = game.settings.file.string("lastServer");
             title.skip_multiplayer_warning = game.settings.file.bool("skipMultiplayerWarning");
-            // Gui.addInitialScreens: the accessibility onboarding comes first.
-            if game.settings.file.bool("onboardAccessibility") {
-                title.start_onboarding();
-            }
+            // Skip onboarding: directly launch into clean Main menu
+            // if game.settings.file.bool("onboardAccessibility") {
+            //     title.start_onboarding();
+            // }
             game.title = Some(title);
         }
     }

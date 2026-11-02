@@ -35,3 +35,11 @@
 
 # Release-only compiled original exporter bundle.
 /exporters/
+
+# muOS / aarch64 build artifacts
+/bins_arm64/horizon-client
+/bins_arm64/horizon-ctl
+/bins_arm64/horizon-prepare
+*.zip
+*.tar.gz
+

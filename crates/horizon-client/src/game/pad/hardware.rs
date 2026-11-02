@@ -104,6 +104,39 @@ fn gilrs_button(button: Button) -> gilrs::Button {
     }
 }
 
+fn is_muos(pad: &gilrs::Gamepad) -> bool {
+    pad.name() == "muOS-Keys"
+        || pad.name() == "Deeplay-keys"
+        || pad.name().starts_with("Anbernic")
+        || (pad.vendor_id() == Some(1) && pad.product_id() == Some(1))
+}
+
+fn muos_gilrs_button(button: Button) -> &'static [gilrs::Button] {
+    use gilrs::Button as G;
+    match button {
+        Button::South => &[G::South],
+        Button::East => &[G::East],
+        Button::West => &[G::C],
+        Button::North => &[G::North],
+        Button::LeftBumper => &[G::West],
+        Button::RightBumper => &[G::Z],
+        Button::Select => &[G::LeftTrigger],
+        Button::Start => &[G::RightTrigger, G::LeftTrigger2],
+        Button::LeftTrigger => &[G::Select],
+        Button::RightTrigger => &[G::Start],
+        Button::LeftStick => &[G::RightTrigger2, G::LeftThumb],
+        Button::RightStick => &[G::Mode, G::RightThumb],
+        Button::DPadUp => &[G::DPadUp],
+        Button::DPadDown => &[G::DPadDown],
+        Button::DPadLeft => &[G::DPadLeft],
+        Button::DPadRight => &[G::DPadRight],
+    }
+}
+
+fn muos_button_pressed(pad: &gilrs::Gamepad, button: Button) -> bool {
+    muos_gilrs_button(button).iter().any(|&b| pad.is_pressed(b))
+}
+
 fn is_dualsense(pad: &gilrs::Gamepad) -> bool {
     matches!((pad.vendor_id(), pad.product_id()),
         (Some(vendor), Some(product)) if horizon_dualsense::is_dualsense(vendor, product))
@@ -114,6 +147,14 @@ fn is_dualsense(pad: &gilrs::Gamepad) -> bool {
 /// Ultimate 2's Linux/BT rows put the right stick on a2/a3 — without them
 /// look never moves (#4343).
 const EXTRA_SDL_MAPPINGS: &str = concat!(
+    // Anbernic H700 Handhelds (RG35XX SP, RG35XX Plus, RG35XX H, RG34XX SP) under muOS
+    "19000000010000000100000000010000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "00000019000100000001000001000000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "00000019000100000001000000010000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "19000000010000000100000000010000,Deeplay-keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "00000019000100000001000001000000,Deeplay-keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "19000000010000000100000000010000,Anbernic RG34XX-SP Controller,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
+    "19000000010000000100000000010000,Anbernic RG35XX SP,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
     "03000000c82d00001260000011010000,8BitDo Ultimate 2,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:a5,leftx:a0,lefty:a1,paddle1:b17,paddle2:b16,paddle3:b2,paddle4:b5,rightshoulder:b7,rightstick:b14,righttrigger:a4,rightx:a2,righty:a3,start:b11,x:b3,y:b4,platform:Linux,\n",
     "05000000c82d00001260000001000000,8BitDo Ultimate 2,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:a5,leftx:a0,lefty:a1,paddle1:b17,paddle2:b16,paddle3:b2,paddle4:b5,rightshoulder:b7,rightstick:b14,righttrigger:a4,rightx:a2,righty:a3,start:b11,x:b3,y:b4,platform:Linux,\n",
     "03000000c82d00000b31000014010000,8BitDo Ultimate 2,a:b0,b:b1,back:b6,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b8,leftshoulder:b4,leftstick:b9,lefttrigger:a2,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b10,righttrigger:a5,rightx:a3,righty:a4,start:b7,x:b2,y:b3,platform:Linux,\n",
@@ -121,7 +162,12 @@ const EXTRA_SDL_MAPPINGS: &str = concat!(
 
 /// The one way to open gilrs: each reader needs the extra rows.
 fn gilrs_builder() -> gilrs::GilrsBuilder {
-    gilrs::GilrsBuilder::new().add_mappings(EXTRA_SDL_MAPPINGS)
+    let mut builder = gilrs::GilrsBuilder::new().add_mappings(EXTRA_SDL_MAPPINGS);
+    let env_mapping = std::env::var("SDL_GAMECONTROLLERCONFIG").unwrap_or_default();
+    if !env_mapping.is_empty() {
+        builder = builder.add_mappings(&env_mapping);
+    }
+    builder
 }
 
 impl Pads {
@@ -135,8 +181,11 @@ impl Pads {
         self.devices.gilrs = match gilrs_builder().build() {
             Ok(g) => {
                 for (id, pad) in g.gamepads() {
-                    log::info!("Controller connected: {}", pad.name());
+                    log::info!("Controller connected: {} (uuid: {:?}, mapping: {:?})", pad.name(), pad.uuid(), pad.mapping_source());
                     self.devices.known.push(id);
+                    if self.devices.active.is_none() {
+                        self.devices.active = Some(id);
+                    }
                 }
                 Some(g)
             }
@@ -176,13 +225,16 @@ impl Pads {
             use gilrs::EventType as E;
             match event {
                 E::Connected => {
-                    log::info!("Controller connected: {}", gilrs.gamepad(id).name());
+                    let pad = gilrs.gamepad(id);
+                    log::info!("Controller connected: {} (uuid: {:?}, mapping: {:?})", pad.name(), pad.uuid(), pad.mapping_source());
                     // Some backends report the controllers already there as they open.
                     if !self.devices.known.contains(&id) {
                         self.devices.known.push(id);
-                        let pad = gilrs.gamepad(id);
                         let style = GlyphStyle::of_device(pad.vendor_id(), pad.product_id());
                         self.connections.push(Connection::Connected(style));
+                    }
+                    if self.devices.active.is_none() {
+                        self.devices.active = Some(id);
                     }
                     if let Some(output) = &self.devices.output {
                         output.scan();
@@ -203,7 +255,7 @@ impl Pads {
                 }
                 E::ButtonPressed(..) => self.devices.active = Some(id),
                 E::AxisChanged(_, value, _) | E::ButtonChanged(_, value, _)
-                    if value.abs() > 0.5 =>
+                    if value.abs() > 0.15 =>
                 {
                     self.devices.active = Some(id)
                 }
@@ -242,32 +294,55 @@ fn device_of(pad: &gilrs::Gamepad) -> Device {
 
 /// A pad's buttons, sticks and triggers now.
 fn state_of(pad: &gilrs::Gamepad) -> PadState {
+    let sdl_mapped = pad.mapping_source() == gilrs::MappingSource::SdlMappings;
+    let is_muos_pad = !sdl_mapped && is_muos(pad);
     let mut state = PadState::default();
     let crossed = face_buttons::crossed(pad);
     for button in Button::ALL {
         if !matches!(button, Button::LeftTrigger | Button::RightTrigger) {
-            let named = face_buttons::named(gilrs_button(button), crossed);
-            state.set(button, pad.is_pressed(named));
+            let pressed = if is_muos_pad {
+                muos_button_pressed(pad, button)
+            } else {
+                let named = face_buttons::named(gilrs_button(button), crossed);
+                pad.is_pressed(named)
+            };
+            state.set(button, pressed);
         }
     }
     let axis = |a| pad.value(a);
     use gilrs::Axis as A;
-    let sdl_mapped = pad.mapping_source() == gilrs::MappingSource::SdlMappings;
-    let (left, right) = gamepad::stick_axes(
-        [axis(A::LeftStickX), axis(A::LeftStickY)],
-        [axis(A::RightStickX), axis(A::RightStickY)],
-        axis(A::LeftZ),
-        pad.vendor_id(),
-        pad.product_id(),
-        sdl_mapped,
-    );
-    state.left = left;
-    state.right = if hid_layout::right_stick_on_z(pad) {
-        hid_layout::right_stick([axis(A::LeftZ), axis(A::RightZ)])
+    let (left, right) = if is_muos_pad {
+        gamepad::muos_stick_axes(
+            axis(A::LeftZ),
+            axis(A::RightStickX),
+            axis(A::RightStickY),
+            axis(A::RightZ),
+        )
     } else {
-        right
+        let (left, right) = gamepad::stick_axes(
+            [axis(A::LeftStickX), axis(A::LeftStickY)],
+            [axis(A::RightStickX), axis(A::RightStickY)],
+            axis(A::LeftZ),
+            pad.vendor_id(),
+            pad.product_id(),
+            sdl_mapped,
+        );
+        let right = if hid_layout::right_stick_on_z(pad) {
+            hid_layout::right_stick([axis(A::LeftZ), axis(A::RightZ)])
+        } else {
+            right
+        };
+        (left, right)
     };
-    state.triggers = triggers::triggers(pad);
+    state.left = left;
+    state.right = right;
+    if is_muos_pad {
+        let lt = if pad.is_pressed(gilrs::Button::Select) { 1.0 } else { 0.0 };
+        let rt = if pad.is_pressed(gilrs::Button::Start) { 1.0 } else { 0.0 };
+        state.triggers = [lt, rt];
+    } else {
+        state.triggers = triggers::triggers(pad);
+    }
     state
 }
 
@@ -723,5 +798,31 @@ mod one_reader_tests {
         };
         router.adopt(&mut pads);
         assert!(pads.devices.gilrs.is_some());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn muos_gilrs_button_mapping() {
+        use gilrs::Button as G;
+        assert_eq!(muos_gilrs_button(Button::LeftBumper), &[G::West]);
+        assert_eq!(muos_gilrs_button(Button::RightBumper), &[G::Z]);
+        assert_eq!(muos_gilrs_button(Button::Select), &[G::LeftTrigger]);
+        assert_eq!(muos_gilrs_button(Button::Start), &[G::RightTrigger, G::LeftTrigger2]);
+        assert_eq!(muos_gilrs_button(Button::LeftTrigger), &[G::Select]);
+        assert_eq!(muos_gilrs_button(Button::RightTrigger), &[G::Start]);
+        assert_eq!(muos_gilrs_button(Button::LeftStick), &[G::RightTrigger2, G::LeftThumb]);
+        assert_eq!(muos_gilrs_button(Button::RightStick), &[G::Mode, G::RightThumb]);
+        assert_eq!(muos_gilrs_button(Button::West), &[G::C]);
+        assert_eq!(muos_gilrs_button(Button::North), &[G::North]);
+        assert_eq!(muos_gilrs_button(Button::South), &[G::South]);
+        assert_eq!(muos_gilrs_button(Button::East), &[G::East]);
+        assert_eq!(muos_gilrs_button(Button::DPadUp), &[G::DPadUp]);
+        assert_eq!(muos_gilrs_button(Button::DPadDown), &[G::DPadDown]);
+        assert_eq!(muos_gilrs_button(Button::DPadLeft), &[G::DPadLeft]);
+        assert_eq!(muos_gilrs_button(Button::DPadRight), &[G::DPadRight]);
     }
 }

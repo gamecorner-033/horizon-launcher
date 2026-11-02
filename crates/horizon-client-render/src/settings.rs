@@ -106,7 +106,7 @@ pub struct Settings {
     pub fov: f32,
     /// Chunks, 2..=32.
     pub render_distance: i32,
-    /// Chunks, 5..=32.
+    /// Chunks, 2..=32.
     pub simulation_distance: i32,
     /// 0..1, vanilla default 0.5.
     pub sensitivity: f32,
@@ -132,6 +132,7 @@ pub struct Settings {
     pub cloud_range: i32,
     /// 0 all, 1 decreased, 2 minimal.
     pub particles: u8,
+    pub block_break_particles: bool,
     pub entity_distance: f32,
     pub entity_shadows: bool,
     pub biome_blend: i32,
@@ -237,6 +238,7 @@ impl Default for Settings {
             clouds: "true".into(),
             cloud_range: 128,
             particles: 0,
+            block_break_particles: false,
             entity_distance: 1.0,
             entity_shadows: true,
             biome_blend: 2,
@@ -465,6 +467,7 @@ impl Settings {
             clouds: f.name("renderClouds"),
             cloud_range: f.int("cloudRange"),
             particles: f.int("particles") as u8,
+            block_break_particles: f.bool("blockBreakParticles"),
             entity_distance: f.double("entityDistanceScaling") as f32,
             entity_shadows: f.bool("entityShadows"),
             biome_blend: f.int("biomeBlendRadius"),
@@ -568,6 +571,7 @@ impl Settings {
         put_name(&mut f, "renderClouds", &self.clouds);
         put_i(&mut f, "cloudRange", self.cloud_range);
         put_i(&mut f, "particles", i32::from(self.particles));
+        put_b(&mut f, "blockBreakParticles", self.block_break_particles);
         put_f(&mut f, "entityDistanceScaling", self.entity_distance);
         put_b(&mut f, "entityShadows", self.entity_shadows);
         put_i(&mut f, "biomeBlendRadius", self.biome_blend);
@@ -765,6 +769,8 @@ pub enum Opt {
     Clouds,
     CloudRange,
     Particles,
+    BlockBreakParticles,
+    PotatoPreset,
     EntityDistance,
     EntityShadows,
     BiomeBlend,

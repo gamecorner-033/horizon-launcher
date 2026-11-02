@@ -249,7 +249,7 @@ impl Game<'_> {
             focused: self.focused,
             osk: self.pad.menu.osk.is_some(),
             dialog: self.dialog_open() || self.code_of_conduct.is_some(),
-            enabled: self.settings.controller.enabled,
+            enabled: self.settings.controller.enabled || cfg!(target_arch = "aarch64"),
         }
     }
 
@@ -264,7 +264,7 @@ impl Game<'_> {
             self.pad_cancel_inputs(event_loop);
         }
         self.pad.context = Some(context);
-        if !self.settings.controller.enabled {
+        if !self.settings.controller.enabled && !cfg!(target_arch = "aarch64") {
             self.pad_output_off();
             self.pad_cancel_inputs(event_loop);
             self.pad.state = PadState::default();
@@ -604,7 +604,8 @@ impl Game<'_> {
     /// The left stick as the move vector, while playing.
     pub(super) fn pad_move(&self) -> Option<[f32; 2]> {
         let settings = &self.settings.controller;
-        if !settings.enabled || self.pad_in_menu() || !self.pad_focused() {
+        let is_handheld = cfg!(target_arch = "aarch64");
+        if (!settings.enabled && !is_handheld) || self.pad_in_menu() || !self.pad_focused() {
             return None;
         }
         gamepad::move_vector(self.pad.state.left, settings.move_deadzone)
@@ -633,7 +634,8 @@ impl Game<'_> {
     /// The right stick turns the view, once per frame (`Entity.turn`).
     pub(super) fn pad_look(&mut self, seconds: f32) {
         let settings = &self.settings.controller;
-        if !settings.enabled || self.pad_in_menu() || self.player.is_none() || !self.pad_focused() {
+        let is_handheld = cfg!(target_arch = "aarch64");
+        if (!settings.enabled && !is_handheld) || self.pad_in_menu() || self.player.is_none() || !self.pad_focused() {
             return;
         }
         // A long frame (a hitch) must not spin the view.

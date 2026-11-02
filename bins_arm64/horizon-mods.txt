@@ -1,0 +1,7 @@
+mod.appleskin:true
+mod.backpack:true
+mod.potato_optimizer:true
+mod.recipes:true
+mod.smartf3:true
+mod.treefall:true
+mod.zoom:true

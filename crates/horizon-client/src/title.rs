@@ -2547,6 +2547,7 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
         }
         match &self.mode {
             Mode::Main => {
+                crate::ui::menu_background(batch, atlas, 0.0, 0.0, w, h, false);
                 draw_logo(atlas, batch, w);
                 if !hide_splash && let Some(splash) = self.splash.as_deref() {
                     let tw = HudBatch::text_width(atlas, splash);
@@ -3319,7 +3320,36 @@ Would you like to enable the Narrator or visit the Accessibility Settings?",
             batch.text(atlas, &title, x + 18.0, 7.0, rgba(255, 255, 0, 255), false);
             batch.text(atlas, &message, x + 18.0, 19.0, u32::MAX, false);
         }
+        self.draw_software_cursor(atlas, batch, cursor.0, cursor.1);
     }
+
+    pub(crate) fn draw_software_cursor(&self, atlas: &HudAtlas, batch: &mut HudBatch, x: f32, y: f32) {
+    let (x, y) = (x.floor(), y.floor());
+    const ROWS: [u8; 10] = [1, 2, 3, 4, 5, 6, 7, 4, 2, 1];
+    for (i, &w) in ROWS.iter().enumerate() {
+        let row = y + i as f32;
+        batch.fill(
+            atlas,
+            x - 1.0,
+            row,
+            f32::from(w) + 2.0,
+            1.0,
+            rgba(0, 0, 0, 255),
+        );
+    }
+    batch.fill(atlas, x - 1.0, y + 10.0, 2.0, 1.0, rgba(0, 0, 0, 255));
+    for (i, &w) in ROWS.iter().enumerate().skip(1).take(8) {
+        let row = y + i as f32;
+        batch.fill(
+            atlas,
+            x,
+            row,
+            f32::from(w) - 1.0,
+            1.0,
+            rgba(255, 255, 255, 255),
+        );
+    }
+}
     /// The tooltip of a world's icon (drawn with the row, as vanilla does) or, for a
     /// world that needs its files upgraded first, of the Play, Edit and Re-Create
     /// buttons (`SelectWorldScreen.updateButtonStatus`).

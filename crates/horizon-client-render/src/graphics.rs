@@ -46,6 +46,7 @@ pub fn reported() -> Option<Reported> {
 /// Simple-level presets. `Custom` leaves every option as the player set it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Preset {
+    Potato,
     Performance,
     Balanced,
     Quality,
@@ -54,7 +55,8 @@ pub enum Preset {
     Custom,
 }
 impl Preset {
-    pub const ALL: [Preset; 5] = [
+    pub const ALL: [Preset; 6] = [
+        Preset::Potato,
         Preset::Performance,
         Preset::Balanced,
         Preset::Quality,
@@ -63,6 +65,7 @@ impl Preset {
     ];
     pub fn name(self) -> &'static str {
         match self {
+            Preset::Potato => "potato",
             Preset::Performance => "performance",
             Preset::Balanced => "balanced",
             Preset::Quality => "quality",
@@ -72,6 +75,7 @@ impl Preset {
     }
     pub fn label(self) -> &'static str {
         match self {
+            Preset::Potato => "Potato",
             Preset::Performance => "Performance",
             Preset::Balanced => "Balanced",
             Preset::Quality => "Quality",
@@ -1114,6 +1118,7 @@ impl Graphics {
 pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
     let (rd, sim, clouds, particles, shadows, blend, mipmaps, entity, leaves, weather_r) =
         match preset {
+            Preset::Potato => (2, 2, "false", 2, false, 0, 0, 0.5, false, 3),
             Preset::Performance => (8, 6, "false", 2, false, 0, 0, 0.5, false, 3),
             Preset::Balanced => (12, 8, "fast", 1, true, 1, 2, 0.75, true, 5),
             Preset::Quality => (16, 12, "true", 0, true, 2, 4, 1.0, true, 10),
@@ -1130,7 +1135,17 @@ pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
     s.entity_distance = entity;
     s.cutout_leaves = leaves;
     s.weather_radius = weather_r;
-    s.graphics_preset = "custom".into();
+    if preset == Preset::Potato {
+        s.block_break_particles = false;
+        s.vignette = false;
+        s.max_fps = 30;
+        s.vsync = false;
+        s.chunk_fade = 0.0;
+        s.controller.enabled = true;
+        s.graphics_preset = "potato".into();
+    } else {
+        s.graphics_preset = "custom".into();
+    }
     let g = &mut s.horizon;
     g.preset = preset;
     g.cave_culling = true;

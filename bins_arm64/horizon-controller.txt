@@ -1,0 +1,15 @@
+# Horizon 26.3 Native Controller Configuration for Anbernic RG35XX SP (muOS)
+enabled:true
+vibration:false
+adaptiveTriggers:false
+lightbar:off
+lookSensitivity:0.25
+invertX:false
+invertY:false
+moveDeadzone:0.15
+lookDeadzone:0.15
+triggerThreshold:0.5
+toggleSneak:true
+glyphs:xbox
+menuNavigation:focus
+keyboard:qwerty
