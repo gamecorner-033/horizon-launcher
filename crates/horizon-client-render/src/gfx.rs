@@ -7210,12 +7210,20 @@ impl Renderer {
     }
     /// The views `render` draws `frame` from.
     pub fn views(&self, frame: &Frame) -> ViewSet {
-        ViewSet::single(self.screen_view(
+        let screen = self.screen_view(
             frame.fov_degrees,
             frame.yaw,
             frame.pitch,
             frame.depth_far,
-        ))
+        );
+        let cull_fov = (frame.fov_degrees + 20.0).min(130.0);
+        let cull = self.screen_view(
+            cull_fov,
+            frame.yaw,
+            frame.pitch,
+            frame.depth_far,
+        );
+        ViewSet::with_cull(screen, cull)
     }
     /// The view frustum `render` will cull with, for culling geometry built
     /// before the frame (entities, block entities) the same way.
@@ -7227,7 +7235,8 @@ impl Renderer {
         bob: Mat4,
         depth_far: f32,
     ) -> Frustum {
-        let views = ViewSet::single(self.screen_view(fov_degrees, yaw, pitch, depth_far));
+        let cull_fov = (fov_degrees + 20.0).min(130.0);
+        let views = ViewSet::single(self.screen_view(cull_fov, yaw, pitch, depth_far));
         Frustum {
             planes: frustum(views.cull().view_proj(bob)),
         }
@@ -8079,7 +8088,11 @@ impl Renderer {
                 camera,
                 radius,
                 &Frusta(view, mirror),
-                |k| !culling || reachable.contains(k),
+                |k| {
+                    !culling
+                        || ((k.0 - camera_section.0).abs() <= 1 && (k.2 - camera_section.2).abs() <= 1)
+                        || reachable.contains(k)
+                },
                 |x, z| {
                     (!cutout.is_empty() && cutout.contains(&(x, z)))
                         || (!leaving.is_empty() && leaving.contains(&(x, z)))

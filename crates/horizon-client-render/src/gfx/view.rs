@@ -59,6 +59,15 @@ impl ViewSet {
         }
     }
 
+    /// A frame drawn from `view`, culled with a broader `cull` view (e.g. padded FOV).
+    pub fn with_cull(view: View, cull: View) -> Self {
+        Self {
+            views: [view; MAX_VIEWS],
+            len: 1,
+            cull,
+        }
+    }
+
     /// The view the HUD, hand and screen-space effects follow.
     pub fn primary(&self) -> &View {
         &self.views[0]
