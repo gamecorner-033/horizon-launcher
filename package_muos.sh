@@ -32,18 +32,22 @@ echo "=== Copying Bundled Fallback Shared Libraries ==="
 cp -a /usr/lib/aarch64-linux-gnu/libasound.so* "${LIBS_DIR}/"
 cp -a /usr/lib/aarch64-linux-gnu/libudev.so* "${LIBS_DIR}/"
 
-echo "=== Copying Pre-prepared Minecraft 26.3 Resources ==="
-if [ ! -f "${GAME_DIR}/resources/asset-index.json" ]; then
-    cp -r "${RES_SRC}"/* "${GAME_DIR}/resources/"
-else
-    echo "Resources already staged, skipping full copy."
-fi
+echo "=== Copying Horizon Engine JSON Tables (No Proprietary Assets) ==="
+# Only copy generated facts and definition JSONs/NBTs, strictly omitting assets/ and data/
+for f in "${RES_SRC}"/*.json "${RES_SRC}"/*.nbt; do
+    [ -f "$f" ] && cp "$f" "${GAME_DIR}/resources/" || true
+done
+# Ensure asset-index.json is NOT in distribution so Install_Assets downloads it fresh
+rm -f "${GAME_DIR}/resources/asset-index.json"
+rm -rf "${GAME_DIR}/resources/assets" "${GAME_DIR}/resources/data"
+
+echo "=== Copying 1-Click Asset Installers ==="
+cp "${CONFIG_SRC}/Install_Assets.bat" "${GAME_DIR}/Install_Assets.bat"
+cp "${CONFIG_SRC}/Install_Assets.sh" "${GAME_DIR}/Install_Assets.sh"
+chmod +x "${GAME_DIR}/Install_Assets.sh"
 
 echo "=== Installing 8x8 (8-bit) Texture Pack ==="
 cp "/mnt/g/horizon/bins_arm64/8x8.zip" "${GAME_DIR}/resourcepacks/8x8.zip"
-unzip -n -q "/mnt/g/horizon/bins_arm64/8x8.zip" "assets/*" -d "${GAME_DIR}/resources/" 2>/dev/null || true
-# Invalidate old 16x16 pre-baked sprite cache so 8x8 textures are used natively
-rm -f "${GAME_DIR}/resources/horizon-sprites.cache"
 
 echo "=== Copying Potato Preset Configs ==="
 cp "${CONFIG_SRC}/options.txt" "${GAME_DIR}/options.txt"
@@ -84,9 +88,13 @@ INSTALLATION:
   1. Insert your muOS SD card into your PC.
   2. Copy the 'ROMS' folder from this package into the root of your SD card (SD1 or SD2).
      - Result should be: SD:/ROMS/PORTS/Horizon.sh and SD:/ROMS/PORTS/horizon/...
-  3. Reinsert SD card into RG35XX SP.
-  4. In muOS menu, go to "Ports" or "Explore Content -> ROMS -> PORTS".
-  5. Select "Horizon.sh" to launch!
+  3. Inside 'ROMS/PORTS/horizon/', run the 1-time asset installer:
+     - Windows: Double-click 'Install_Assets.bat'
+     - Mac/Linux: Run './Install_Assets.sh' in a terminal
+     This downloads official Minecraft 26.3 assets directly from Mojang onto your SD card.
+  4. Safely eject the SD card and reinsert into your RG34XX SP / RG35XX SP.
+  5. In muOS menu, go to "Ports" or "Explore Content -> ROMS -> PORTS".
+  6. Select "Horizon.sh" to launch!
 
 FEATURES INCLUDED:
   - 100% Native ARM64 (aarch64) Linux execution - zero emulation overhead!

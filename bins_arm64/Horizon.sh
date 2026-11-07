@@ -71,6 +71,18 @@ echo "========================================================"
 chmod +x "${BIN_DIR}/horizon-client" 2>/dev/null || true
 chmod +x "${BIN_DIR}/horizon-ctl" 2>/dev/null || true
 chmod +x "${BIN_DIR}/horizon-prepare" 2>/dev/null || true
+chmod +x "${GAME_DIR}/Install_Assets.sh" 2>/dev/null || true
+
+# Pre-flight: verify that Minecraft 26.3 assets were installed
+if [ ! -f "${GAME_DIR}/resources/asset-index.json" ] || [ ! -d "${GAME_DIR}/resources/assets" ]; then
+    echo "========================================================"
+    echo "ERROR: Minecraft 26.3 assets not found in ${GAME_DIR}/resources!"
+    echo "Please plug your SD card into a PC and run:"
+    echo "  'Install_Assets.bat' (Windows) or 'Install_Assets.sh' (Mac/Linux)"
+    echo "inside ROMS/PORTS/horizon/ to download official game assets."
+    echo "========================================================"
+    exit 1
+fi
 
 # Export library paths for both direct and wrapped launch
 export LD_LIBRARY_PATH="${LIBS_DIR}:${LD_LIBRARY_PATH:-/usr/lib:/lib}"
