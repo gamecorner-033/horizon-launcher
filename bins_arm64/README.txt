@@ -1,5 +1,5 @@
 ================================================================================
-HORIZON 26.3 - Anbernic RG35XX SP / H700 Handheld Port for muOS
+HORIZON 26.3 - Anbernic RG34XX SP / RG35XX SP Handheld Port for muOS (v1.01)
 ================================================================================
 
 CREDITS & ACKNOWLEDGEMENTS:
