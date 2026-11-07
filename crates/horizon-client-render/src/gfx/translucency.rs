@@ -75,6 +75,9 @@ impl SortState {
         origin: [i32; 3],
         sorter: &'a mut Sorter,
     ) -> Option<&'a [u32]> {
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        let block = camera.map(|v| (v.floor() as i32) & !1);
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
         let block = camera.map(|v| v.floor() as i32);
         let pov = std::array::from_fn(|i| ((block[i] >> 4) - (origin[i] >> 4)).clamp(-1, 1));
         if let Some((last_block, last_pov)) = self.last

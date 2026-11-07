@@ -814,10 +814,16 @@ fn mark_fades(
 /// Line segments the hit outline can hold.
 const MAX_OUTLINE_EDGES: u64 = 256;
 /// Staging buffer size for section meshes: a frame of uploads while
-/// exploring fits in a few.
+/// exploring fits in a few (1 MiB on aarch64 handhelds, 4 MiB on desktop).
+#[cfg(target_arch = "aarch64")]
+const SECTION_UPLOAD_CHUNK: u64 = 1 << 20;
+#[cfg(not(target_arch = "aarch64"))]
 const SECTION_UPLOAD_CHUNK: u64 = 4 << 20;
 /// Section copies are submitted early past this many staged bytes, which
 /// bounds the staging memory frames that are not drawn can hold.
+#[cfg(target_arch = "aarch64")]
+const SECTION_COPY_LIMIT: u64 = 16 << 20;
+#[cfg(not(target_arch = "aarch64"))]
 const SECTION_COPY_LIMIT: u64 = 64 << 20;
 /// What compaction copies in a frame, `compact_arena` first and
 /// `shrink_translucent` with what it left, and a range more where a call's
@@ -4492,10 +4498,15 @@ impl Renderer {
         // their opaque quads first, so each pass draws its part in a run or two.
         crate::mesher::group_parts(adapter.get_info().backend == wgpu::Backend::Metal);
         // Readable as storage where flat draws run: a shader pack's terrain program reads them.
+        // On aarch64 handhelds, start at 256K vertices (~7 MiB) instead of 1M (~28 MiB) to save shared RAM.
         let arena = arena::Arena::new(
             &device,
             std::mem::size_of::<TerrainVertex>() as u64,
-            1 << 20,
+            if cfg!(target_arch = "aarch64") {
+                1 << 18
+            } else {
+                1 << 20
+            },
             flat_wanted,
         );
         // Sections as one index list per frame where multi-draw is emulated.

@@ -456,7 +456,7 @@ impl PackScreen {
         };
         s.reposition(m);
         s.populate(None);
-        s.set_focus(Focus::Search);
+        s.set_focus(Focus::None);
         s
     }
     fn info(&self, id: &str) -> Option<&PackInfo> {
@@ -698,7 +698,7 @@ impl PackScreen {
         let bottom_right = (16..32).contains(&rx) && (16..32).contains(&ry);
         let index = self.model_index(side, id).unwrap_or(0);
         let s = side == 1;
-        if sel && icon {
+        if sel && (icon || side == 0) {
             if self
                 .info(id)
                 .is_some_and(|p| p.compat != Compat::Compatible)
@@ -707,7 +707,7 @@ impl PackScreen {
                 return true;
             }
             self.model.activate(s, index, true);
-        } else if unsel && left {
+        } else if unsel && (left || (side == 1 && !icon)) {
             self.model.activate(s, index, false);
         } else if up && top_right {
             self.model.move_by(s, index, true);
@@ -965,9 +965,13 @@ impl PackScreen {
             d::string_widget(&mut out, m, &c.title, tx, ty, 0);
             d::label(&mut out, &lines, mx, my, self.width - 50, true);
             for ((bx, by), key) in buttons.into_iter().zip(["gui.yes", "gui.no"]) {
+                let rect = [bx as f32, by as f32, 150.0, 20.0];
+                let label = tr(key);
+                crate::widgets::record_as(&label.plain(), rect, true, crate::widgets::Kind::Button);
+                crate::widgets::target_as(rect, crate::widgets::Kind::Button);
                 let hover = d::inside(mouse, bx, by, 150, 20);
                 crate::widgets::widget_cursor(hover, true);
-                d::button(&mut out, m, &tr(key), bx, by, 150, 20, true, hover, now_ms);
+                d::button(&mut out, m, &label, bx, by, 150, 20, true, hover, now_ms);
             }
             return out;
         }
@@ -1379,6 +1383,9 @@ impl PackScreen {
         labels: [&Text; 2],
     ) {
         for (i, ((bx, by), label)) in self.footer().into_iter().zip(labels).enumerate() {
+            let rect = [bx as f32, by as f32, 150.0, 20.0];
+            crate::widgets::record_as(&label.plain(), rect, true, crate::widgets::Kind::Button);
+            crate::widgets::target_as(rect, crate::widgets::Kind::Button);
             let hover = d::inside(mouse, bx, by, 150, 20);
             // The cursor follows the mouse; the highlight also keyboard focus.
             crate::widgets::widget_cursor(hover, true);
@@ -1506,6 +1513,9 @@ impl PackScreen {
                 }
                 Row::Pack(id) => {
                     let Some(p) = self.info(id) else { continue };
+                    let rect = [left as f32, e.y as f32, w as f32, e.height as f32];
+                    crate::widgets::record_as(&p.title.plain(), rect, true, crate::widgets::Kind::Row);
+                    crate::widgets::target_as(rect, crate::widgets::Kind::Row);
                     if p.compat != Compat::Compatible {
                         d::fill(
                             out,

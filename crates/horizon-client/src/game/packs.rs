@@ -19,8 +19,14 @@ use std::{
     sync::Arc,
 };
 
-/// Where overlay roots are built (beside options.txt).
+/// Where overlay roots are built (beside options.txt, or `/tmp` on aarch64 Linux
+/// handhelds where the SD card is FAT32/exFAT and cannot hold POSIX symlinks).
 pub fn cache_dir() -> PathBuf {
+    #[cfg(all(target_os = "linux", target_arch = "aarch64", not(test)))]
+    {
+        return PathBuf::from("/tmp/horizon-cache/resourcepacks");
+    }
+    #[cfg(not(all(target_os = "linux", target_arch = "aarch64", not(test))))]
     std::env::current_dir()
         .unwrap_or_default()
         .join(".horizon-cache/resourcepacks")

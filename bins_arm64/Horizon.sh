@@ -36,13 +36,36 @@ LOG_FILE="${GAME_DIR}/launch.log"
 cd "${GAME_DIR}"
 exec > "${LOG_FILE}" 2>&1
 
+# Auto-detect native framebuffer geometry for RG34XX SP (720x480) vs RG35XX SP (640x480)
+if [ -z "${DISPLAY_WIDTH:-}" ] || [ -z "${DISPLAY_HEIGHT:-}" ]; then
+    if [ -r /sys/class/graphics/fb0/modes ]; then
+        FB_MODE=$(head -n 1 /sys/class/graphics/fb0/modes | sed -E 's/^[^:]*:([0-9]+)x([0-9]+).*/\1 \2/')
+        read -r FB_W FB_H <<< "$FB_MODE"
+    fi
+    if [ -z "${FB_W:-}" ] && [ -r /sys/class/graphics/fb0/virtual_size ]; then
+        IFS=',' read -r FB_W FB_H < /sys/class/graphics/fb0/virtual_size
+        if [ "${FB_W:-0}" -eq 720 ] && [ "${FB_H:-0}" -ge 480 ]; then
+            FB_H=480
+        elif [ "${FB_W:-0}" -eq 640 ] && [ "${FB_H:-0}" -ge 480 ]; then
+            FB_H=480
+        fi
+    fi
+    DISPLAY_WIDTH="${DISPLAY_WIDTH:-${FB_W:-720}}"
+    DISPLAY_HEIGHT="${DISPLAY_HEIGHT:-${FB_H:-480}}"
+fi
+
+# Lock Allwinner H700 Cortex-A53 cores to performance governor during gameplay
+for gov in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    [ -w "$gov" ] && echo performance > "$gov" 2>/dev/null || true
+done
+
 echo "========================================================"
 echo "Starting Horizon 26.3 on muOS"
 echo "Launch time    : $(date)"
 echo "Game directory : ${GAME_DIR}"
 echo "CFW Name       : ${CFW_NAME:-muOS}"
-echo "Device         : ${DEVICE_NAME:-RG35XX-SP}"
-echo "Display        : ${DISPLAY_WIDTH:-640}x${DISPLAY_HEIGHT:-480}"
+echo "Device         : ${DEVICE_NAME:-RG34XX-SP}"
+echo "Display        : ${DISPLAY_WIDTH:-720}x${DISPLAY_HEIGHT:-480}"
 echo "========================================================"
 
 chmod +x "${BIN_DIR}/horizon-client" 2>/dev/null || true
@@ -76,7 +99,7 @@ if [ "${CFW_NAME}" = "ROCKNIX" ]; then
     export PAN_MESA_DEBUG=gl3
 fi
 
-WIDTH="${DISPLAY_WIDTH:-640}"
+WIDTH="${DISPLAY_WIDTH:-720}"
 HEIGHT="${DISPLAY_HEIGHT:-480}"
 
 # 2. Locate and mount Weston compositor runtime

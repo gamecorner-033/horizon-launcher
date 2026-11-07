@@ -331,6 +331,9 @@ impl Game<'_> {
         let attack_clicks = std::mem::take(&mut self.attack_clicks);
         let use_clicks = std::mem::take(&mut self.use_clicks);
         if self.screen == Screen::Playing && self.title.is_none() && self.sleeping.is_none() {
+            if attack_clicks > 0 || self.left {
+                self.rust_mods_auto_tool_before_attack();
+            }
             let mut clicks = std::mem::take(&mut self.clicks);
             // keyAttack.isDown(); playing implies the grabbed mouse here
             // (scripts under --control hold buttons without grabbing it).

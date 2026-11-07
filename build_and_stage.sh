@@ -6,11 +6,11 @@ export PKG_CONFIG_ALLOW_CROSS=1
 export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
 export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
 export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-export CARGO_TARGET_DIR="/root/target-aarch64"
+export CARGO_TARGET_DIR="/mnt/g/cargo_target_horizon"
 
-TARGET_DIR="/root/target-aarch64"
+TARGET_DIR="/mnt/g/cargo_target_horizon"
 SAVED_BIN="/mnt/g/horizon/bins_arm64"
-ROOT_BIN="/root/horizon-muos-bin"
+ROOT_BIN="/mnt/g/horizon/bins_arm64"
 
 mkdir -p "${TARGET_DIR}"
 mkdir -p "${SAVED_BIN}"
@@ -41,21 +41,22 @@ cp "${TARGET_DIR}/aarch64-unknown-linux-gnu/release/horizon-prepare" "${SAVED_BI
 echo "=========================================================="
 echo "Step 3: Staging muOS Package"
 echo "=========================================================="
-STAGE_DIR="/root/horizon-muos-stage"
+STAGE_DIR="/mnt/g/horizon-muos-stage"
 ROMS_DIR="${STAGE_DIR}/ROMS/PORTS"
 GAME_DIR="${ROMS_DIR}/horizon"
 BIN_DIR="${GAME_DIR}/bin"
 LIBS_DIR="${GAME_DIR}/libs"
 MODS_DIR="${GAME_DIR}/horizon-mods"
 RES_SRC="/mnt/c/Users/Brookes/AppData/Roaming/horizon-launcher/versions/nightly-2026-10-31-d91cab6/.local/horizon-client/26.3"
-CONFIG_SRC="/mnt/c/Users/Brookes/AppData/Roaming/horizon"
-EXPORT_DIR="/mnt/c/Users/Brookes/AppData/Roaming/horizon"
+CONFIG_SRC="/mnt/g/horizon/bins_arm64"
+EXPORT_DIR="/mnt/g/horizon-export"
 
 rm -rf "${STAGE_DIR}"
 mkdir -p "${ROMS_DIR}"
 mkdir -p "${BIN_DIR}"
 mkdir -p "${LIBS_DIR}"
 mkdir -p "${GAME_DIR}/resources"
+mkdir -p "${GAME_DIR}/resourcepacks"
 mkdir -p "${MODS_DIR}"
 mkdir -p "${GAME_DIR}/saves"
 mkdir -p "${GAME_DIR}/logs"
@@ -69,6 +70,10 @@ cp -a /usr/lib/aarch64-linux-gnu/libudev.so* "${LIBS_DIR}/"
 
 echo "Copying Minecraft 26.3 prepared resources..."
 cp -r "${RES_SRC}"/* "${GAME_DIR}/resources/"
+
+echo "Installing 8x8 (8-bit) texture pack into resourcepacks/ and baking into base resources..."
+cp "/mnt/g/horizon/bins_arm64/8x8.zip" "${GAME_DIR}/resourcepacks/8x8.zip"
+unzip -o -q "/mnt/g/horizon/bins_arm64/8x8.zip" "assets/*" -d "${GAME_DIR}/resources/" || true
 
 echo "Copying Potato Preset configs..."
 cp "${CONFIG_SRC}/options.txt" "${GAME_DIR}/options.txt"

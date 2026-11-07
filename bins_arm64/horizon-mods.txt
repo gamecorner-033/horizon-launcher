@@ -5,3 +5,4 @@ mod.recipes:true
 mod.smartf3:true
 mod.treefall:true
 mod.zoom:true
+mod.bedrock_crafting:true

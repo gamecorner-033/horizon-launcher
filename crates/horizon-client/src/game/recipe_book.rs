@@ -63,7 +63,7 @@ struct View {
 
 #[derive(Default)]
 pub(super) struct RecipeUi {
-    book: Option<Book>,
+    pub(super) book: Option<Book>,
     tab: Option<Tab>,
     pub(super) search: Option<EditBox>,
     page: usize,
@@ -274,12 +274,12 @@ impl Game<'_> {
     // ---- recipes and what can be crafted ----
 
     /// The grid size of the open crafting menu.
-    fn book_grid(&self) -> (usize, usize) {
+    pub(super) fn book_grid(&self) -> (usize, usize) {
         (self.craft_size, self.craft_size)
     }
     /// The items the book counts (`RecipeBookComponent.updateStackedContents`):
     /// the inventory and the menu's crafting slots, as the menu engine counts them.
-    fn book_available(&mut self, _book: BookType) -> Stacked {
+    pub(super) fn book_available(&mut self, _book: BookType) -> Stacked {
         if self.remote.is_some() {
             // A server's menu: the slots it last sent, counted the same way.
             use horizon_client::menu::{Env, Kind, Menu};
@@ -381,7 +381,7 @@ impl Game<'_> {
         self.recipe_ui.book = None;
         self.recipe_tables.categories = None;
     }
-    fn ensure_book(&mut self) {
+    pub(super) fn ensure_book(&mut self) {
         if self.recipe_ui.book.is_none() {
             let mut book = Book::build(self.recipes(), self.items());
             book.set_display_ids(&self.stations().recipe_index);

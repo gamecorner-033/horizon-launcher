@@ -8,6 +8,7 @@ use std::{
 use wgpu::util::DeviceExt;
 
 /// Native cube order: +X, -X, +Y, -Y, +Z, -Z (CubeMapTexture.SUFFIXES).
+#[allow(dead_code)]
 const FACE_ORDER: [u8; 6] = [1, 3, 5, 4, 0, 2];
 /// Where the cube's faces live in a resource root.
 const BACKGROUND: &str = "assets/minecraft/textures/gui/title/background";
@@ -34,6 +35,14 @@ impl Faces {
     /// falls back to the grey placeholder that an installation without the
     /// imported panorama shows.
     pub fn load(root: &Path, defaults: &Path) -> Self {
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        {
+            let _ = (root, defaults);
+            // Panorama cubemap rendering is disabled on handhelds in favour of the flat menu
+            // background; skip decoding and uploading ~24 MiB of 1024x1024 cubemap PNGs.
+            return Self::colour([96, 110, 111, 255]);
+        }
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
         Self::try_load(root, defaults).unwrap_or_else(|error| {
             log::warn!(
                 "Horizon: no title panorama ({error}); prepare the game again in the launcher \

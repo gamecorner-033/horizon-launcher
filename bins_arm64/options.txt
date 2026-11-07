@@ -1,10 +1,10 @@
 version:5023
 ao:false
 biomeBlendRadius:0
-chunkSectionFadeInTime:0.75
+chunkSectionFadeInTime:0.0
 cutoutLeaves:false
 enableVsync:false
-entityDistanceScaling:0.6
+entityDistanceScaling:0.5
 entityShadows:false
 forceUnicodeFont:false
 japaneseGlyphVariants:false
@@ -52,7 +52,7 @@ invertYMouse:false
 realmsNotifications:true
 showSubtitles:false
 directionalAudio:false
-bobView:true
+bobView:false
 toggleCrouch:false
 toggleSprint:false
 toggleAttack:false
@@ -66,7 +66,7 @@ damageTiltStrength:1.0
 highContrast:false
 highContrastBlockOutline:false
 narratorHotkey:true
-resourcePacks:["vanilla","file/8x8.zip"]
+resourcePacks:["vanilla"]
 incompatibleResourcePacks:[]
 lastServer:
 lang:en_us
@@ -108,7 +108,7 @@ saveChatDrafts:false
 panoramaScrollSpeed:1.0
 telemetryOptInExtra:false
 onboardAccessibility:false
-menuBackgroundBlurriness:5
+menuBackgroundBlurriness:0
 startedCleanly:true
 musicToast:"never"
 musicFrequency:"DEFAULT"

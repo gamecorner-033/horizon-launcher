@@ -83,8 +83,11 @@ libmimalloc-sys = { path = "third_party/libmimalloc-sys" }
 debug = "line-tables-only"
 
 [profile.release]
+opt-level = 3
 lto = "thin"
 codegen-units = 1
+panic = "abort"
+strip = "symbols"
 
 # Optimized but quick-to-link builds for iteration: cargo build --profile fast
 [profile.fast]

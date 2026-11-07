@@ -23,6 +23,9 @@ use std::{
 
 /// How long a worker waits with nothing to do before it gives back its
 /// generator's scratch buffers ([`ChunkGenerator::idle`]).
+#[cfg(target_arch = "aarch64")]
+pub const IDLE_RELEASE: std::time::Duration = std::time::Duration::from_secs(2);
+#[cfg(not(target_arch = "aarch64"))]
 pub const IDLE_RELEASE: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Worker CPU time and job counts by kind, for benchmarks

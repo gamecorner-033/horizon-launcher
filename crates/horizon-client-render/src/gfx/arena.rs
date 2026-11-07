@@ -10,7 +10,10 @@ use std::collections::{BTreeMap, VecDeque};
 /// start at multiples of it (`flat` names sections by these blocks).
 pub const GRAIN: u64 = 256;
 /// The largest page of the section arena, and of arenas shaders bind whole
-/// as storage, in bytes.
+/// as storage, in bytes (capped to 64 MiB on aarch64 handhelds to protect shared LPDDR4 RAM).
+#[cfg(target_arch = "aarch64")]
+pub const PAGE_BYTES: u64 = 64 << 20;
+#[cfg(not(target_arch = "aarch64"))]
 pub const PAGE_BYTES: u64 = 256 << 20;
 /// The largest page of an arena no shader binds as storage: under 2 GiB, where
 /// DirectX 12 and OpenGL cap buffers (`i32::MAX`), with room for the bytes
@@ -321,6 +324,8 @@ impl Arena {
         }
         let capacity = if self.pages.is_empty() {
             self.initial_capacity
+        } else if cfg!(target_arch = "aarch64") {
+            1 << 18
         } else {
             1 << 20
         }

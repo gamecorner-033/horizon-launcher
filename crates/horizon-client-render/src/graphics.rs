@@ -1141,6 +1141,8 @@ pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
         s.max_fps = 30;
         s.vsync = false;
         s.chunk_fade = 0.0;
+        s.menu_blur = 0;
+        s.view_bobbing = false;
         s.controller.enabled = true;
         s.graphics_preset = "potato".into();
     } else {
@@ -1150,11 +1152,19 @@ pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
     g.preset = preset;
     g.cave_culling = true;
     g.animated_textures = true;
-    g.chunk_updates = 0;
-    g.upload_budget_kib = 0;
+    if preset == Preset::Potato {
+        g.entity_culling = true;
+        g.battery = true;
+        g.chunk_updates = 1;
+        g.upload_budget_kib = 256;
+        g.weather = false;
+    } else {
+        g.chunk_updates = 0;
+        g.upload_budget_kib = 0;
+        g.weather = true;
+    }
     g.sky = true;
     g.fog = true;
-    g.weather = true;
 }
 
 #[cfg(test)]

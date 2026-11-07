@@ -6,7 +6,7 @@ export PKG_CONFIG_ALLOW_CROSS=1
 export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
 export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
 export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-export CARGO_TARGET_DIR=/tmp/horizon-target-aarch64
+export CARGO_TARGET_DIR=/mnt/g/cargo_target_horizon
 
 cd /mnt/g/horizon
 
@@ -17,9 +17,9 @@ echo "=== Building horizon-prepare for aarch64 ==="
 cargo build --release -p horizon-prepare --bin horizon-prepare --target aarch64-unknown-linux-gnu
 
 echo "=== Build finished! Checking binaries ==="
-ls -lh /tmp/horizon-target-aarch64/aarch64-unknown-linux-gnu/release/horizon-client
-ls -lh /tmp/horizon-target-aarch64/aarch64-unknown-linux-gnu/release/horizon-prepare
-ls -lh /tmp/horizon-target-aarch64/aarch64-unknown-linux-gnu/release/horizon-ctl
+ls -lh /mnt/g/cargo_target_horizon/aarch64-unknown-linux-gnu/release/horizon-client
+ls -lh /mnt/g/cargo_target_horizon/aarch64-unknown-linux-gnu/release/horizon-prepare
+ls -lh /mnt/g/cargo_target_horizon/aarch64-unknown-linux-gnu/release/horizon-ctl
 
-file /tmp/horizon-target-aarch64/aarch64-unknown-linux-gnu/release/horizon-client
-file /tmp/horizon-target-aarch64/aarch64-unknown-linux-gnu/release/horizon-prepare
+file /mnt/g/cargo_target_horizon/aarch64-unknown-linux-gnu/release/horizon-client
+file /mnt/g/cargo_target_horizon/aarch64-unknown-linux-gnu/release/horizon-prepare

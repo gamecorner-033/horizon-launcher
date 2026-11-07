@@ -411,7 +411,11 @@ impl super::Game<'_> {
                 "tutorial.look.title",
                 "Look around",
                 "tutorial.look.description",
-                "Use your mouse to turn",
+                if self.pad.in_use || cfg!(target_arch = "aarch64") {
+                    "Use right stick to turn"
+                } else {
+                    "Use your mouse to turn"
+                },
                 vec![],
             ),
             Hint::FindTree => (

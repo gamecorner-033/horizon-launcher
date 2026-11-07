@@ -2359,6 +2359,7 @@ impl Game<'_> {
     /// and on servers), and the server's own (`native_window` is false
     /// there: the single player server thread, a dedicated server).
     pub(super) fn native_tick(&mut self) {
+        self.rust_mods_tick();
         mod_api::dispatch_tick(self, mod_api::mods());
     }
     /// Before an eligible targeted block's selection outline is built.
@@ -2621,6 +2622,7 @@ impl Game<'_> {
     /// `native_fill` and `native_text`. Skip a corner `native_corner_shown`
     /// says is taken.
     pub(super) fn native_hud(&mut self, batch: &mut HudBatch, corners: &mut Corners) {
+        self.rust_mods_hud(batch, corners);
         mod_api::dispatch_hud(self, mod_api::mods(), batch, corners);
     }
     /// After the complete normal GUI batch, including screens, prompts, toasts,
@@ -2811,6 +2813,7 @@ impl Game<'_> {
     /// (`key.keyboard.z`, `key.mouse.left`): keys on any screen (check
     /// `native_playing`), mouse buttons while playing. Repeats are left out.
     pub(super) fn native_key(&mut self, key: &str, pressed: bool) {
+        self.rust_mods_key(key, pressed);
         mod_api::dispatch_key(self, mod_api::mods(), key, pressed);
     }
     /// A real window key event after handling, including repeats and consumed shortcuts.
@@ -3244,16 +3247,19 @@ impl Game<'_> {
     }
     /// Options > Mods lists the native mods: push yours.
     pub(super) fn native_mods(&mut self, mods: &mut Vec<NativeMod>) {
+        self.rust_mods_list(mods);
         mod_api::dispatch_mods(self, mod_api::mods(), mods);
     }
     /// The buttons of mod `mod_id`'s settings page, under its keys: push
     /// their labels when it is yours. Asked again each time the page opens
     /// and after each click.
     pub(super) fn native_settings(&mut self, mod_id: &str, buttons: &mut Vec<String>) {
+        self.rust_mods_settings(mod_id, buttons);
         mod_api::dispatch_settings(self, mod_api::mods(), mod_id, buttons);
     }
     /// Button `button` of mod `mod_id`'s settings page was clicked.
     pub(super) fn native_settings_click(&mut self, mod_id: &str, button: usize) {
+        self.rust_mods_settings_click(mod_id, button);
         mod_api::dispatch_settings_click(self, mod_api::mods(), mod_id, button);
     }
     /// The player did `event` on mod `mod_id`'s panel (`native_panel_items`):
@@ -8364,6 +8370,7 @@ impl Game<'_> {
     /// A message from the server on `channel` (`mod_id:name`), whose `data`
     /// is the sender's own bytes. The window's game only. API 40.
     pub(super) fn native_net_from_server(&mut self, channel: &str, data: &[u8]) {
+        self.rust_mods_net(channel, data);
         mod_api::dispatch_net_from_server(self, mod_api::mods(), channel, data);
     }
     /// A play packet from the server reached the window's game, decoded,
