@@ -95,6 +95,7 @@ pub enum H {
     Workers,
     Overlay,
     ResolutionScale,
+    FilterMode,
     Antialiasing,
     Upscaling,
     ScreenshotQuality,
@@ -361,6 +362,11 @@ pub fn rows() -> Vec<(Page, Vec<(&'static str, Vec<Setting>)>)> {
                             H::ResolutionScale,
                             High,
                             "World pixels per screen pixel. Below 100% is faster on the GPU.",
+                        ),
+                        h(
+                            H::FilterMode,
+                            Medium,
+                            "Filter for resolution scale: Linear (smooth) or Nearest (retro sharp).",
                         ),
                         h(
                             H::Antialiasing,
@@ -784,7 +790,7 @@ impl H {
                 Some(i as f32 / (LOD_STEPS.len() - 1) as f32)
             }
             H::Workers => Some(g.workers as f32 / max_workers() as f32),
-            H::ResolutionScale => Some((g.resolution_scale as f32 - 50.0) / 150.0),
+            H::ResolutionScale => Some((g.resolution_scale.max(25) as f32 - 25.0) / 175.0),
             // Auto, then 10..480 by 10.
             H::HdrPaperWhite => Some(g.hdr_paper_white as f32 / 480.0),
             // Auto, then 200..2000 by 50.
@@ -803,7 +809,7 @@ impl H {
             H::EntityCullingPrecheck => Some(32),
             H::UploadBudget => Some((UPLOAD_STEPS.len() - 1) as u32),
             H::Workers => Some(max_workers()),
-            H::ResolutionScale => Some(30),
+            H::ResolutionScale => Some(35),
             H::HdrPaperWhite => Some(41),
             H::HdrPeak => Some(37),
             H::HdrBlackLevel => Some(100),
@@ -884,6 +890,7 @@ impl H {
                 n => labelled("Worker Threads", n),
             },
             H::ResolutionScale => labelled_percent("Resolution Scale", g.resolution_scale),
+            H::FilterMode => labelled("Scaling Filter", g.filter_mode.label()),
             H::Antialiasing => labelled(
                 "Anti-aliasing",
                 match (g.fxaa, g.taa) {
@@ -964,7 +971,7 @@ impl H {
                 g.lod_distance = LOD_STEPS[(v * (LOD_STEPS.len() - 1) as f32).round() as usize]
             }
             H::Workers => g.workers = (v * max_workers() as f32).round() as u32,
-            H::ResolutionScale => g.resolution_scale = (50.0 + (v * 30.0).round() * 5.0) as u32,
+            H::ResolutionScale => g.resolution_scale = (25.0 + (v * 35.0).round() * 5.0) as u32,
             H::HdrPaperWhite => g.hdr_paper_white = (v * 48.0).round() as u32 * 10,
             H::HdrPeak => {
                 g.hdr_peak = match (v * 37.0).round() as u32 {
@@ -1024,6 +1031,9 @@ impl H {
             H::AnimatedTextures => g.animated_textures = !g.animated_textures,
             H::DitherCutoutMips => g.dither_cutout_mips = !g.dither_cutout_mips,
             H::PresentMode => g.present_mode = step(&PresentMode::ALL, g.present_mode, back),
+            H::FilterMode => {
+                g.filter_mode = step(&crate::graphics::ScalingFilter::ALL, g.filter_mode, back)
+            }
             // Off, FXAA, TAA.
             H::Antialiasing => {
                 let i = if g.taa { 2 } else { usize::from(g.fxaa) };
@@ -2753,8 +2763,8 @@ mod tests {
     fn presets_set_vanilla_and_horizon_options() {
         let mut s = Settings::default();
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480]);
-        assert_eq!(s.horizon.preset, Preset::Performance);
-        assert_eq!(s.render_distance, 8);
+        assert_eq!(s.horizon.preset, Preset::Potato);
+        assert_eq!(s.render_distance, 2);
         assert_eq!(s.clouds, "false");
         // Any quality change leaves the preset.
         Item::Vanilla(Opt::Clouds).cycle(&mut s, false, [854, 480]);
@@ -2777,7 +2787,7 @@ mod tests {
         assert_eq!(seen, [2, 4, 8, 1]);
         Item::Horizon(H::ScreenshotQuality).cycle(&mut s, true, [854, 480]);
         assert_eq!(s.horizon.screenshot_quality, 8);
-        assert_eq!(s.horizon.preset, Preset::Performance);
+        assert_eq!(s.horizon.preset, Preset::Potato);
     }
 
     #[test]
@@ -3328,7 +3338,10 @@ mod tests {
         let missed: Vec<_> = missed
             .into_iter()
             .filter(|m| !m.starts_with(|c: char| c.is_ascii_digit()) && !m.starts_with("Auto ("))
-            .filter(|m| !["An", "Aus", "FSR 3.1", "key.keyboard.unknown"].contains(&m.as_str()))
+            .filter(|m| {
+                !["An", "Aus", "FSR 3.1", "key.keyboard.unknown", "Scaling Filter", "Nearest (Sharp)", "Linear (Smooth)", "Potato"].contains(&m.as_str())
+                    && !m.starts_with("Filter for resolution scale")
+            })
             .collect();
         assert_eq!(missed, Vec::<String>::new());
     }

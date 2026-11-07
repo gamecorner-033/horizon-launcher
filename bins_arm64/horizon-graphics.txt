@@ -13,7 +13,8 @@ presentMode:auto
 framePacing:precise
 workers:2
 overlay:fps
-resolutionScale:100
+resolutionScale:50
+filterMode:nearest
 fxaa:false
 taa:false
 upscaling:native

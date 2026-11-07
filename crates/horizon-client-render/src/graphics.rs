@@ -488,6 +488,39 @@ impl Upscaling {
     }
 }
 
+/// Filter mode for resolution scaling (Linear = smooth bilinear blit, Nearest = sharp retro pixelated blit).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
+pub enum ScalingFilter {
+    #[default]
+    Linear,
+    Nearest,
+}
+
+impl ScalingFilter {
+    pub const ALL: [ScalingFilter; 2] = [
+        ScalingFilter::Linear,
+        ScalingFilter::Nearest,
+    ];
+    pub fn name(self) -> &'static str {
+        match self {
+            ScalingFilter::Linear => "linear",
+            ScalingFilter::Nearest => "nearest",
+        }
+    }
+    pub fn label(self) -> &'static str {
+        match self {
+            ScalingFilter::Linear => "Linear (Smooth)",
+            ScalingFilter::Nearest => "Nearest (Sharp)",
+        }
+    }
+    pub fn parse(s: &str) -> Self {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "nearest" => ScalingFilter::Nearest,
+            _ => ScalingFilter::Linear,
+        }
+    }
+}
+
 static REDUCED_SUGGESTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Whether the settings suggest Reduced far detail: set when the renderer
 /// starts, on the GPUs `lod_capped` names (far terrain slows them most).
@@ -721,8 +754,10 @@ pub struct Graphics {
     /// Chunk worker threads; 0 uses every core but one. Applies at the next start.
     pub workers: u32,
     pub overlay: Overlay,
-    /// World resolution as a percentage of the window's (50..=200).
+    /// World resolution as a percentage of the window's (25..=200).
     pub resolution_scale: u32,
+    /// Scaling filter mode for the world resolution scale.
+    pub filter_mode: ScalingFilter,
     /// FXAA over the world.
     pub fxaa: bool,
     /// TAA over the world (FXAA is off while it is on).
@@ -814,6 +849,7 @@ impl Default for Graphics {
             workers: 0,
             overlay: Overlay::Off,
             resolution_scale: 100,
+            filter_mode: ScalingFilter::Linear,
             fxaa: false,
             taa: false,
             upscaling: Upscaling::Native,
@@ -935,7 +971,8 @@ impl Graphics {
                     }
                 }
                 "workers" => g.workers = number(g.workers).min(64),
-                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(50, 200),
+                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(25, 200),
+                "filterMode" => g.filter_mode = ScalingFilter::parse(value),
                 "fxaa" => g.fxaa = flag(g.fxaa),
                 "taa" => g.taa = flag(g.taa),
                 "upscaling" => g.upscaling = Upscaling::parse(value),
@@ -984,7 +1021,7 @@ impl Graphics {
     }
     pub fn serialize(&self) -> String {
         let mut text = format!(
-            "preset:{}\nlodDistance:{}\nfarDetail:{}\ncaveCulling:{}\nentityCulling:{}\nentityCullingPrecheck:{}\nparticleCulling:{}\nleafCulling:{}\nblockEntityCacheShulkerBoxes:{}\nblockEntityCacheSigns:{}\nblockEntityCacheDecoratedPots:{}\nblockEntityCacheBells:{}\nblockEntityCacheChests:{}\nblockEntityCacheBanners:{}\nblockEntityCacheCopperGolemStatues:{}\nchunkUpdates:{}\nuploadBudgetKiB:{}\ntextureBudgetMiB:{}\nsky:{}\nfog:{}\nweather:{}\nanimatedTextures:{}\nditherCutoutMips:{}\npresentMode:{}\nframePacing:{}\nworkers:{}\noverlay:{}\nresolutionScale:{}\nfxaa:{}\ntaa:{}\nupscaling:{}\nscreenshotQuality:{}\nframeGeneration:{}\nhdr:{}\nhdrPaperWhite:{}\nhdrPeak:{}\nhdrBlackLevel:{}\nhdrUiBrightness:{}\nhdrLighting:{}\nhdrKey:{}\nbatteryMode:{}\nshadowCache:{}\ngraphicsApi:{}\npickedShaderPack:{}\nbatchTranslucent:{}\nhdrSmoothGradients:{}\ngpuCulling:{}\n",
+            "preset:{}\nlodDistance:{}\nfarDetail:{}\ncaveCulling:{}\nentityCulling:{}\nentityCullingPrecheck:{}\nparticleCulling:{}\nleafCulling:{}\nblockEntityCacheShulkerBoxes:{}\nblockEntityCacheSigns:{}\nblockEntityCacheDecoratedPots:{}\nblockEntityCacheBells:{}\nblockEntityCacheChests:{}\nblockEntityCacheBanners:{}\nblockEntityCacheCopperGolemStatues:{}\nchunkUpdates:{}\nuploadBudgetKiB:{}\ntextureBudgetMiB:{}\nsky:{}\nfog:{}\nweather:{}\nanimatedTextures:{}\nditherCutoutMips:{}\npresentMode:{}\nframePacing:{}\nworkers:{}\noverlay:{}\nresolutionScale:{}\nfilterMode:{}\nfxaa:{}\ntaa:{}\nupscaling:{}\nscreenshotQuality:{}\nframeGeneration:{}\nhdr:{}\nhdrPaperWhite:{}\nhdrPeak:{}\nhdrBlackLevel:{}\nhdrUiBrightness:{}\nhdrLighting:{}\nhdrKey:{}\nbatteryMode:{}\nshadowCache:{}\ngraphicsApi:{}\npickedShaderPack:{}\nbatchTranslucent:{}\nhdrSmoothGradients:{}\ngpuCulling:{}\n",
             self.preset.name(),
             self.lod_distance,
             self.far_detail.name(),
@@ -1020,6 +1057,7 @@ impl Graphics {
                 Overlay::Graph => "graph",
             },
             self.resolution_scale,
+            self.filter_mode.name(),
             bool_text(self.fxaa),
             bool_text(self.taa),
             self.upscaling.name(),
@@ -1153,11 +1191,12 @@ pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
     g.cave_culling = true;
     g.animated_textures = true;
     if preset == Preset::Potato {
-        g.entity_culling = EntityCullingMode::Synchronous;
         g.battery = true;
         g.chunk_updates = 1;
         g.upload_budget_kib = 256;
         g.weather = false;
+        g.resolution_scale = 50;
+        g.filter_mode = ScalingFilter::Nearest;
     } else {
         g.chunk_updates = 0;
         g.upload_budget_kib = 0;
@@ -1224,6 +1263,7 @@ mod tests {
             workers: 6,
             overlay: Overlay::Graph,
             resolution_scale: 75,
+            filter_mode: ScalingFilter::Nearest,
             fxaa: true,
             taa: true,
             upscaling: Upscaling::Balanced,

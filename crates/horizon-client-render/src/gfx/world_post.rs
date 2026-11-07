@@ -9,6 +9,7 @@
 //! clamp alone.
 
 use glam::{DMat4, DVec3, Mat4, Vec2};
+use crate::graphics::ScalingFilter;
 
 /// The least a world is scaled to when memory runs out.
 const MIN_SCALE: f32 = 0.25;
@@ -21,6 +22,7 @@ struct WorldTarget {
     depth: wgpu::TextureView,
     group: wgpu::BindGroup,
     taa: Option<History>,
+    filter: ScalingFilter,
 }
 
 /// TAA's two history textures at the output size (the world's, times the upscale), written
@@ -53,11 +55,14 @@ struct TaaResources {
 pub struct Post {
     layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
+    sampler_nearest: wgpu::Sampler,
     copy: wgpu::RenderPipeline,
     fxaa: wgpu::RenderPipeline,
     format: wgpu::TextureFormat,
-    /// World resolution relative to the window (0.5..=2.0).
+    /// World resolution relative to the window (0.25..=2.0).
     pub scale: f32,
+    /// Filtering mode used when copying/upscaling the world target to the screen.
+    pub filter_mode: ScalingFilter,
     pub antialias: bool,
     pub taa: bool,
     /// Output pixels per rendered pixel while TAA is on (1: native): the world renders
@@ -226,9 +231,15 @@ impl Post {
             }
         };
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Horizon post linear"),
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        let sampler_nearest = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Horizon post nearest"),
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
         Self {
@@ -236,8 +247,10 @@ impl Post {
             fxaa: pipeline("fs_fxaa", &pipeline_layout, format),
             layout,
             sampler,
+            sampler_nearest,
             format,
             scale: 1.0,
+            filter_mode: ScalingFilter::Linear,
             antialias: false,
             taa: false,
             upscale: 1.0,
@@ -338,7 +351,7 @@ impl Post {
             if self
                 .target
                 .as_ref()
-                .is_some_and(|t| t.size == size && t.taa.as_ref().map(|h| h.size) == history_size)
+                .is_some_and(|t| t.size == size && t.taa.as_ref().map(|h| h.size) == history_size && t.filter == self.filter_mode)
             {
                 break;
             }
@@ -470,6 +483,7 @@ impl Post {
                 depth,
                 group,
                 taa,
+                filter: self.filter_mode,
             }
         }
     }
@@ -481,6 +495,10 @@ impl Post {
 
     /// Bindings that copy (or anti-alias) `view` onto the screen in `finish_with`.
     pub fn bind(&self, device: &wgpu::Device, view: &wgpu::TextureView) -> wgpu::BindGroup {
+        let sampler = match self.filter_mode {
+            ScalingFilter::Linear => &self.sampler,
+            ScalingFilter::Nearest => &self.sampler_nearest,
+        };
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Horizon post"),
             layout: &self.layout,
@@ -491,7 +509,7 @@ impl Post {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    resource: wgpu::BindingResource::Sampler(sampler),
                 },
             ],
         })
