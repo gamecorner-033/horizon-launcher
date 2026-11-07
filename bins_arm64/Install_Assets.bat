@@ -36,11 +36,8 @@ del /f /q "%SCRIPT_DIR%client_temp.jar"
 echo [3/3] Downloading official asset index manifest...
 curl.exe -f -s -L "https://piston-meta.mojang.com/v1/packages/abfaa525f923f807df8b4e4d29c1b5e3a104adbe/34.json" -o "%RES_DIR%\asset-index.json"
 
-if exist "%SCRIPT_DIR%resourcepacks\8x8.zip" (
-    echo [OPTIONAL] Applying 8x8 performance texture pack for RG34XX SP / RG35XX SP...
-    tar.exe -xf "%SCRIPT_DIR%resourcepacks\8x8.zip" -C "%RES_DIR%" assets 2>nul
-    if exist "%RES_DIR%\horizon-sprites.cache" del /f /q "%RES_DIR%\horizon-sprites.cache"
-)
+REM Ensure texture sprite cache is regenerated cleanly from official assets
+if exist "%RES_DIR%\horizon-sprites.cache" del /f /q "%RES_DIR%\horizon-sprites.cache"
 
 echo.
 echo ================================================================================

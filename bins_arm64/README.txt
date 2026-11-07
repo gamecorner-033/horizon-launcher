@@ -34,8 +34,9 @@ INSTALLATION & 1-TIME ASSET SETUP:
      - On Windows: Double-click 'Install_Assets.bat' inside SD:/ROMS/PORTS/horizon/
      - On macOS / Linux: Run './Install_Assets.sh' inside SD:/ROMS/PORTS/horizon/
    This downloads the official 26.3 client jar directly from Mojang's CDN,
-   extracts textures, fonts, data, and sounds, and pre-configures the 8x8
-   texture pack for optimal handheld FPS.
+   and extracts clean vanilla textures, fonts, data, and sounds.
+   (The 8x8 texture pack is provided in resourcepacks/ as an optional choice
+   and is disabled by default).
 4. Safely eject the SD card and insert it back into your handheld console.
 5. In muOS, navigate to "Ports" (or Explore Content -> ROMS -> PORTS) and select
    "Horizon.sh" to launch!
@@ -61,7 +62,7 @@ PORT OPTIMIZATIONS INCLUDED:
 --------------------------------------------------------------------------------
   - 100% Native ARM64 (aarch64) Linux execution - zero emulation overhead.
   - Tailored Bedrock-style 640x480 Handheld Crafting UI.
-  - Custom 8x8 low-overhead texture pack for Mali-G31 GPU.
+  - Optional 8x8 texture pack included in resourcepacks/ (off by default).
   - Aggressive chunk culling and memory tuning for 1GB-2GB RAM handhelds.
   - Pre-integrated WAILA inspector and Veinminer rust mods.
 

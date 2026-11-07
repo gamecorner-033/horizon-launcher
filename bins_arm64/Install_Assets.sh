@@ -45,15 +45,8 @@ elif command -v wget >/dev/null 2>&1; then
     wget -q "${ASSET_INDEX_URL}" -O "${RES_DIR}/asset-index.json"
 fi
 
-if [ -f "${SCRIPT_DIR}/resourcepacks/8x8.zip" ]; then
-    echo "[OPTIONAL] Applying 8x8 performance texture pack for RG34XX SP / RG35XX SP..."
-    if command -v unzip >/dev/null 2>&1; then
-        unzip -q -o "${SCRIPT_DIR}/resourcepacks/8x8.zip" "assets/*" -d "${RES_DIR}" 2>/dev/null || true
-    elif command -v tar >/dev/null 2>&1; then
-        tar -xf "${SCRIPT_DIR}/resourcepacks/8x8.zip" -C "${RES_DIR}" assets 2>/dev/null || true
-    fi
-    rm -f "${RES_DIR}/horizon-sprites.cache"
-fi
+# Ensure texture sprite cache is regenerated cleanly from official assets
+rm -f "${RES_DIR}/horizon-sprites.cache"
 
 echo ""
 echo "================================================================================"

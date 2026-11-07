@@ -71,7 +71,7 @@ Due to licensing and distribution rules, official Mojang assets cannot be redist
   2. Navigate to `ROMS/PORTS/horizon/`.
   3. Run `chmod +x Install_Assets.sh && ./Install_Assets.sh`.
 
-The script automatically downloads the official Java Edition 26.3 client jar from Mojang's CDN, extracts the required textures, models, definitions, and sound tables into `resources/`, and pre-configures the 8x8 performance texture pack.
+The script automatically downloads the official Java Edition 26.3 client jar from Mojang's CDN and extracts clean vanilla textures, models, definitions, and sound tables into `resources/`. (The 8×8 performance texture pack is optionally included in `resourcepacks/` and disabled by default).
 
 ### Step 3: Play!
 1. Safely eject the SD card and insert it back into your handheld device.
@@ -86,7 +86,7 @@ The script automatically downloads the official Java Edition 26.3 client jar fro
 - **100% Native ARM64 (aarch64)**: Runs bare-metal on the 64-bit Linux kernel with zero Java runtime overhead and zero emulation.
 - **Bedrock-Style Handheld Crafting UI**: Complete redesign of crafting grids tailored for 640×480 handheld screens, supporting D-Pad category filtering and 1-click recipe crafting without awkward mouse dragging.
 - **Mali-G31 GPU Potato Preset**:
-  - Ultra-lightweight custom 8×8 texture pack pre-installed to prevent memory starvation on embedded GPUs.
+  - Optional lightweight 8×8 texture pack provided in `resourcepacks/` (off by default).
   - Directional chunk reachability culling to eliminate visual pop-in while maintaining steady 60 FPS in standard terrain.
   - Synchronous entity culling and fast mesh generation.
   - Native 640×480 framebuffer rendering with hardware-accelerated GLES / Panfrost.
