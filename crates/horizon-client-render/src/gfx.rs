@@ -2600,7 +2600,7 @@ impl Renderer {
         crate::graphics::suggest_reduced_far_detail(crate::graphics::lod_capped(&info));
         let size = window.inner_size();
         let max_side = device.limits().max_texture_dimension_2d;
-        let (config, present_modes, hdr_output) = if let Some(surface) = &surface {
+        let (config, present_modes, hdr_output, surface_unconfigured) = if let Some(surface) = &surface {
             let mut config = surface
                 .get_default_config(
                     &adapter,
@@ -2635,7 +2635,18 @@ impl Renderer {
                     config.width, config.height, config.format, config.present_mode
                 ));
             }
-            surface.configure(&device, &config);
+            let _ = device.poll(wgpu::PollType::wait_indefinitely());
+            let configured = Self::configure(
+                &device,
+                surface,
+                &config,
+                None,
+                &device_lost,
+            );
+            if let Err(e) = &configured {
+                log::warn!("Horizon renderer: initial surface configuration deferred ({e}); will retry on next frame");
+            }
+            let surface_unconfigured = configured.is_err();
             let hdr_output = hdr::output(&caps);
             crate::graphics::offer_hdr(hdr_output.is_some());
             if previous.is_none() {
@@ -2644,7 +2655,7 @@ impl Renderer {
                     hdr_output.map_or("not offered by this display", hdr::Output::name)
                 );
             }
-            (config, caps.present_modes.clone(), hdr_output)
+            (config, caps.present_modes.clone(), hdr_output, surface_unconfigured)
         } else {
             let format = wgpu::TextureFormat::Bgra8Unorm;
             let config = wgpu::SurfaceConfiguration {
@@ -2672,7 +2683,7 @@ impl Renderer {
                     );
                 }
             }
-            (config, Vec::new(), hdr_output)
+            (config, Vec::new(), hdr_output, false)
         };
         let offscreen = surface
             .is_none()
@@ -4939,7 +4950,7 @@ impl Renderer {
             info,
             suspended: !drawable_size(size.width, size.height, max_side),
             acquire_validation_failures: 0,
-            surface_unconfigured: false,
+            surface_unconfigured,
             drawn_sections: 0,
             section_draws: 0,
             section_draw_calls: 0,
@@ -5095,6 +5106,7 @@ impl Renderer {
     pub fn release_surface(&mut self) {
         self.frame_gen.stop();
         self.queue.wait();
+        let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
         *self
             .spare_surface
             .get_mut()
@@ -5104,6 +5116,7 @@ impl Renderer {
     /// Reattach a window after surface loss or a failed renderer replacement.
     pub fn recreate_surface(&mut self) -> Result<()> {
         self.queue.wait();
+        let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
         if self.offscreen.is_some() {
             return Ok(());
         }
