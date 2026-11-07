@@ -545,7 +545,7 @@ impl Game<'_> {
         // Count unique ingredients required
         let mut counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
         for ing in reqs {
-            if let Some(first) = ing.1.first() {
+            if let Some(first) = ing.items.iter().next() {
                 let name = self.pack.names.display_item(first);
                 *counts.entry(name).or_insert(0) += 1;
             }

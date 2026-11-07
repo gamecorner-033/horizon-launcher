@@ -5,6 +5,7 @@ use std::{
     path::Path,
     sync::{Arc, Mutex},
 };
+#[cfg(not(all(target_arch = "aarch64", not(test))))]
 use wgpu::util::DeviceExt;
 
 /// Native cube order: +X, -X, +Y, -Y, +Z, -Z (CubeMapTexture.SUFFIXES).

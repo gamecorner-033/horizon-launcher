@@ -515,7 +515,7 @@ impl Game<'_> {
         }
         self.ensure_rust_mods_loaded();
 
-        if let Some((idx, _)) = self.mob_hit()
+        if let Some((idx, ..)) = self.mob_hit()
             && let Some(mob) = self.mobs.get(idx)
             && mob.alive()
         {
@@ -748,7 +748,7 @@ impl Game<'_> {
         // 1. TOP-CENTER ENEMY HEALTH BAR HUD
         // =====================================================================
         if health_bars_enabled {
-            let direct_mob_idx = self.mob_hit().map(|(idx, _)| idx);
+            let direct_mob_idx = self.mob_hit().map(|(idx, ..)| idx);
             let target_mob_idx = direct_mob_idx.or_else(|| {
                 let (tracked_id, last_tick) = with_state(|st| st.tracked_mob)?;
                 if self.ticks.saturating_sub(last_tick) > 70 {

@@ -1153,7 +1153,7 @@ pub fn apply_preset(preset: Preset, s: &mut crate::settings::Settings) {
     g.cave_culling = true;
     g.animated_textures = true;
     if preset == Preset::Potato {
-        g.entity_culling = true;
+        g.entity_culling = EntityCullingMode::Synchronous;
         g.battery = true;
         g.chunk_updates = 1;
         g.upload_budget_kib = 256;
