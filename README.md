@@ -9,6 +9,7 @@
   <a href="#quick-start--installation"><b>Quick Start Guide</b></a> ·
   <a href="#features--handheld-optimizations"><b>Handheld Features</b></a> ·
   <a href="#controls"><b>Controls</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a> ·
   <a href="#building-from-source"><b>Building from Source</b></a>
 </p>
 
