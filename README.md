@@ -1,158 +1,147 @@
+# Horizon for muOS (Anbernic RG35XX SP & H700 Handhelds)
+
 <p align="center">
-  <img src="docs/media/banner.webp" alt="Horizon: the game you know, rebuilt in Rust" width="100%">
+  <b>A native, high-performance port of the Horizon Rust engine for Anbernic Allwinner H700 retro handhelds running muOS.</b>
 </p>
 
 <p align="center">
-  <a href="https://playhorizon.dev"><b>Website</b></a> ·
-  <a href="#download"><b>Download</b></a> ·
-  <a href="https://playhorizon.dev/docs/"><b>Docs</b></a> ·
-  <a href="https://discord.gg/playhorizon"><b>Discord</b></a> ·
-  <a href="ROADMAP.md"><b>Roadmap</b></a> ·
-  <a href="#contributing"><b>Contributing</b></a>
+  <a href="#credits--acknowledgements"><b>Credits & Acknowledgements</b></a> ·
+  <a href="#quick-start--installation"><b>Quick Start Guide</b></a> ·
+  <a href="#features--handheld-optimizations"><b>Handheld Features</b></a> ·
+  <a href="#controls"><b>Controls</b></a> ·
+  <a href="#building-from-source"><b>Building from Source</b></a>
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/vanilla%20parity-100%25-F0795A" alt="Vanilla parity 100%">
-  <a href="#project-status"><img src="https://img.shields.io/badge/player--visible%20gaps-0%20open-F0795A" alt="Player-visible gaps open"></a>
-</p>
+---
 
-# Horizon
+## Credits & Acknowledgements
 
-**Minecraft: Java Edition 26.3, rewritten in Rust.** Your worlds, the same rules and the same terrain as the Java game, checked against it by hundreds of differential tests, in one native program with no Java. Free, open source (MIT) and unofficial: you play it with your own copy of Java Edition.
+This port is built upon the incredible work of the **Horizon Project**:
 
-<p align="center">
-  <img src="docs/media/readme/valley.webp" alt="A river valley with a plains village, savanna hills and a cherry grove, seen from above with a long view distance" width="100%">
-</p>
+- **Upstream Project**: [Horizon - The game you know, rebuilt in Rust](https://github.com/horizon-rust/horizon)
+- **Lead Author & Creator**: [Ludovic Marie (@ludovic111)](https://github.com/ludovic111) / [lu4ovic.com](https://lu4ovic.com)
+- **Official Website**: [playhorizon.dev](https://playhorizon.dev)
+- **Official Discord**: [discord.gg/playhorizon](https://discord.gg/playhorizon)
+- **Original License**: [MIT License](LICENSE)
 
-## What works today
+Special thanks to all upstream contributors who made a pure Rust, zero-Java reimplementation of Minecraft: Java Edition possible.
 
-Everything below is in the current release.
+> [!IMPORTANT]
+> **Legal Notice & Disclaimer**:
+> This is an independent, unofficial community port. It is **NOT AN OFFICIAL MINECRAFT PRODUCT** and is **NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT**.
+> Minecraft is a trademark of Mojang Synergies AB. This repository and its release archives contain **NO proprietary Minecraft code, jars, textures, sounds, or assets**. Users must supply their own game files using the provided 1-time asset installer.
 
-- **The game.** Survival, creative, hardcore and spectator; vanilla world generation in all three dimensions, mobs, villagers, raids, redstone, every command, the HUD and the recipe book. Vanilla saves open as they are, and worlds from 1.8 to 26.2 are upgraded.
-- **Multiplayer.** Join vanilla and Horizon servers (online mode included), open a world to LAN, or invite friends with a code from the launcher's Home page.
-- **Graphics.** Distant terrain up to 1,024 chunks, graphics presets, HDR and controllers, all off by default where they would change the vanilla look ([settings](https://playhorizon.dev/docs/settings)).
-- **Packs.** Resource packs, data packs and shader packs ([below](#mods-and-shader-packs)).
-- **Mods.** Content mods and native Rust mods, installed from the launcher ([below](#mods-and-shader-packs)).
-- **Servers.** Host one from the launcher, or run `horizon-server` on a VPS ([below](#host-a-server)).
-- **The launcher.** It installs and updates the game, prepares its files from your copy of Minecraft, and updates itself.
+---
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/media/readme/sunset.webp" alt="Sunset behind a cherry grove on a hill, with a river below"></td>
-    <td width="50%"><img src="docs/media/readme/nether.webp" alt="A crimson forest in the Nether, with a piglin among the fungi"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/media/readme/survival.webp" alt="Survival in a village square: two villagers, flowers, the hotbar, health and hunger"></td>
-    <td width="50%"><img src="docs/media/readme/multiplayer.webp" alt="Two players in a LAN world: the other player's name tag and the player list"></td>
-  </tr>
-</table>
+## Supported Devices
 
-<sub>Nightly 2026-11-05 on a Mac mini (Apple M4 Pro, Metal): vanilla's textures, no mods or shader packs, render distance 32 with distant terrain on.</sub>
+- **Anbernic RG35XX SP** (Recommended)
+- **Anbernic RG34XX SP**
+- **Anbernic RG40XX H / RG40XX V**
+- **Anbernic RG28XX**
+- **Anbernic RG35XX Plus / RG35XX 2024**
+- **Operating System**: [muOS](https://muos.dev/) (Banana, Beans, or newer)
+- **Hardware**: Allwinner H700 SoC (4× ARM Cortex-A53 @ 1.5 GHz), Mali-G31 MP2 GPU, 1GB–2GB LPDDR4 RAM
 
-## Download
+---
 
-Get **the Horizon launcher** from [playhorizon.dev](https://playhorizon.dev), or from [the launcher releases](https://github.com/horizon-rust/horizon/releases?q=launcher&expanded=true):
+## Quick Start & Installation
 
-| Platform | File | Needs |
-| --- | --- | --- |
-| Windows x64 | `horizon-launcher-setup.exe` | Windows 10 or 11, a GPU with Vulkan or DirectX 12 |
-| Windows on Arm | `horizon-launcher-setup-arm64.exe` | Windows 11 on Arm |
-| macOS, Apple Silicon | `horizon-launcher-macos-arm64.dmg` | macOS 12 or later |
-| macOS, Intel | `horizon-launcher-macos-x64.dmg` | macOS 12 or later |
-| Linux x86-64 | `horizon-launcher-linux-x86_64.AppImage` or `.tar.gz` | a glibc distribution, X11 or Wayland, a GPU with Vulkan or OpenGL 3.3 |
+Setting up Horizon on muOS takes less than 3 minutes.
 
-**You also need a Microsoft account that owns Minecraft: Java Edition.** You sign in with it in the launcher, which plays only with an account that owns the game ([why](docs/microsoft-account.md)). Horizon contains no Minecraft code or assets: an existing install (official launcher, Prism, MultiMC...) is reused, and without one the launcher downloads 26.3 from Mojang for your account. Step by step: [Install and first launch](https://playhorizon.dev/docs/install).
+### Step 1: Download & Extract
+1. Download the latest `horizon-rg35xxsp-muos.zip` from [Releases](https://github.com/gamecorner-033/horizon-muos/releases).
+2. Insert your muOS SD card (SD1 or SD2) into your computer.
+3. Extract the `ROMS` folder from the zip directly to the root of your SD card.
+   Your SD card will have:
+   ```text
+   SD:/ROMS/PORTS/Horizon.sh
+   SD:/ROMS/PORTS/horizon/
+   ```
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/media/readme/launcher-home.webp" alt="The launcher's Home page: the Horizon instance, Play, the version picker, the friend invite field, screenshots and the patch log"></td>
-    <td width="50%"><img src="docs/media/readme/launcher-mods.webp" alt="The launcher's Mods page: Horizon's mod registry with Zoom selected, and tabs for modpacks, resource packs, shader packs and data packs"></td>
-  </tr>
-</table>
+### Step 2: 1-Click Asset Installer (PC Setup)
+Due to licensing and distribution rules, official Mojang assets cannot be redistributed. A convenient 1-time installer is included:
 
-## Mods and shader packs
+- **On Windows**:
+  1. Open your SD card in File Explorer.
+  2. Navigate to `ROMS/PORTS/horizon/`.
+  3. Double-click `Install_Assets.bat`.
+- **On macOS / Linux**:
+  1. Open a terminal.
+  2. Navigate to `ROMS/PORTS/horizon/`.
+  3. Run `chmod +x Install_Assets.sh && ./Install_Assets.sh`.
 
-- **Content mods** (`.hmod`): blocks, items, recipes, loot, models and textures, with no code.
-- **Native mods** (`.hnmod`): Rust that the launcher compiles into the game for you, with nothing to install.
-- **Java mods** (Fabric, NeoForge, Forge) don't run: Horizon has no Java. The launcher carries over the data and assets inside their jars, and imports modpacks (`.mrpack`, CurseForge zips, Prism instances) the same way ([modpacks](https://playhorizon.dev/docs/modpacks)).
-- **Shader packs**: Iris/OptiFine-format packs (`shaders/` folders) and Horizon's own WGSL packs, under Video Settings → Shader Packs ([pack format](docs/shaders.md)).
+The script automatically downloads the official Java Edition 26.3 client jar from Mojang's CDN, extracts the required textures, models, definitions, and sound tables into `resources/`, and pre-configures the 8x8 performance texture pack.
 
-Mods are off by default: a fresh install plays exactly like vanilla 26.3. The launcher's Mods page browses Horizon's registry and Modrinth. [Mods](https://playhorizon.dev/docs/mods) · [make a mod](docs/mods.md).
+### Step 3: Play!
+1. Safely eject the SD card and insert it back into your handheld device.
+2. Turn on your handheld and open muOS.
+3. Go to **Ports** (or *Explore Content* → `ROMS` → `PORTS`).
+4. Select **Horizon.sh** to launch!
 
-## Host a server
+---
 
-The launcher's **Servers** page creates, starts, backs up and updates a server, and invites friends. On a VPS, `horizon-server` installs with one command, needs no Java, and takes vanilla 26.3 and Horizon players alike. [Host a server](https://playhorizon.dev/docs/hosting) ([reference](docs/hosting.md)).
+## Features & Handheld Optimizations
 
-## Agent control
+- **100% Native ARM64 (aarch64)**: Runs bare-metal on the 64-bit Linux kernel with zero Java runtime overhead and zero emulation.
+- **Bedrock-Style Handheld Crafting UI**: Complete redesign of crafting grids tailored for 640×480 handheld screens, supporting D-Pad category filtering and 1-click recipe crafting without awkward mouse dragging.
+- **Mali-G31 GPU Potato Preset**:
+  - Ultra-lightweight custom 8×8 texture pack pre-installed to prevent memory starvation on embedded GPUs.
+  - Directional chunk reachability culling to eliminate visual pop-in while maintaining steady 60 FPS in standard terrain.
+  - Synchronous entity culling and fast mesh generation.
+  - Native 640×480 framebuffer rendering with hardware-accelerated GLES / Panfrost.
+- **Native Gamepad & evdev Input**: Full out-of-the-box controller support mapped directly to muOS kernel evdev input events.
+- **Built-in Quality-of-Life Handheld Mods**:
+  - **WAILA (What Am I Looking At)**: Instant block and entity HUD inspector.
+  - **Veinminer**: Streamlined mining for handheld ergonomics.
 
-AI agents and scripts can play Horizon. `horizon-ctl`, shipped with the game, reads its state as JSON and acts like a player; `horizon-ctl mcp` serves the same commands over MCP.
+---
 
-```sh
-horizon-ctl launch --world Survival --seed 5 --wait   # finds the version the launcher installed
-horizon-ctl state                                       # position, health, food, target, screen...
-horizon-ctl goto -0.5 65 -2.5 --near 2.5                # walks there along a path
-horizon-ctl break -1 65 -3                              # mines it; replies with the drops
+## Controls
+
+Horizon utilizes a Bedrock Edition layout configured for retro handheld ergonomics:
+
+| Button | Action |
+| --- | --- |
+| **D-Pad** | Movement (Walk forward, backward, strafe) |
+| **A (South)** | Jump / Menu Confirm |
+| **B (East)** | Sneak / Cancel / Drop |
+| **X (West)** | Inventory & Bedrock Crafting UI |
+| **Y (North)** | Chat / Quick Action |
+| **R1 (Right Bumper)** | Attack / Mine block |
+| **L1 (Left Bumper)** | Use / Place block / Interact |
+| **R2 (Right Trigger)** | Fast Break / Veinminer |
+| **L2 (Left Trigger)** | Off-hand item use |
+| **Start** | Pause Menu & Options |
+| **Select** | Camera Perspective (1st / 3rd person) |
+
+---
+
+## Building from Source
+
+To cross-compile the handheld ARM64 client binary on a Linux or WSL2 development machine:
+
+```bash
+# 1. Install prerequisites
+sudo apt update
+sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libasound2-dev:arm64 libudev-dev:arm64
+
+# 2. Add Rust target
+rustup target add aarch64-unknown-linux-gnu
+
+# 3. Clone and build
+git clone https://github.com/gamecorner-033/horizon-muos.git
+cd horizon-muos
+cargo build --release --target aarch64-unknown-linux-gnu -p horizon-client
 ```
 
-`horizon-ctl help` lists every command. [Agent control](docs/native-client.md#agent-control-horizon-ctl-and-mcp).
-
-## Build from source
-
-Needs Rust 1.90+, Python 3.10+, JDK 25, and on Linux `libasound2-dev libudev-dev`. `horizon-prepare` builds the game's resources from **your own copy** of Java Edition 26.3 (checked against `research-lock.json`) and never downloads it:
-
-1. **Client:** play 26.3 once in the official launcher. Horizon reads `~/.minecraft` (or `--minecraft-dir` / `HORIZON_MINECRAFT_DIR`).
-2. **Server jar:** the 26.3 server jar (`downloads.server.url` in `versions/26.3/26.3.json`), passed once with `--server-jar` or `HORIZON_SERVER_JAR`.
-
-```sh
-git clone https://github.com/horizon-rust/horizon.git
-cd horizon
-cargo run --release -p horizon-prepare -- --prepare --server-jar ~/Downloads/server.jar   # needs JDK 25
-cargo run --release -p horizon-prepare -- sounds   # optional: sounds from your launcher install
-cargo run --release -p horizon-client
+To create a clean release package ready for muOS:
+```bash
+./package_muos.sh
 ```
 
-Prepared files land in the gitignored `.local/`: never commit or share them. Options, controls and architecture: [the native client guide](docs/native-client.md); all developer docs: [docs/README.md](docs/README.md).
+---
 
-## Contributing
+## License
 
-Issues and pull requests are welcome: read [CONTRIBUTING.md](CONTRIBUTING.md) (vanilla first, small pull requests), and see [ROADMAP.md](ROADMAP.md) or [playhorizon.dev/hub](https://playhorizon.dev/hub) for what's next. Questions: [Discord](https://discord.gg/playhorizon). Before a pull request, run the self-check and paste its output:
-
-```sh
-git config core.hooksPath .githooks
-python3 tools/pr_ready.py
-```
-
-It runs rustfmt, clippy, the touched crates' tests, the Python tests, the public-tree check and the vanilla harnesses your change affects. Never commit game files, decompiled source or prepared resources.
-
-## Project status
-
-**Player-visible gaps: 0 open** of the 833 the [port ledger](tools/port_ledger.py) found, reading every vanilla 26.3 method against Horizon's code: vanilla behaviour a player would notice that Horizon doesn't have yet. By area: Animals [0](https://github.com/horizon-rust/horizon/issues/3512); Monsters and bosses [0](https://github.com/horizon-rust/horizon/issues/3513); Entities, projectiles, vehicles and decorations [0](https://github.com/horizon-rust/horizon/issues/3514); Items, enchantments and inventories [0](https://github.com/horizon-rust/horizon/issues/3515); Blocks, redstone and fluids [0](https://github.com/horizon-rust/horizon/issues/3516); World, world generation and saves [0](https://github.com/horizon-rust/horizon/issues/3517); Screens, HUD and client packets [0](https://github.com/horizon-rust/horizon/issues/3518); Entity and block rendering, models [0](https://github.com/horizon-rust/horizon/issues/3519); Server and players on the server [0](https://github.com/horizon-rust/horizon/issues/3520); Mob AI, villagers and raids [0](https://github.com/horizon-rust/horizon/issues/3521). This number goes down as gaps close (`tools/parity_gaps.py`); the harness results below say that what is tested matches.
-
-The table is the project's own audit: every subsystem matches vanilla in every harness that compares it. 100% means 100% of what the harnesses compare, not that nothing else differs. What players still run into: [known issues](docs/known-issues.md).
-
-### Java parity: 100%
-
-Scores: 0 (absent), 0.25 (started), 0.5 (playable, major features missing), 0.75 (mostly complete) or 1 (complete and verified by differential tests); the percentage is their average. Last audited 2026-10-13: the harnesses pass on Linux and macOS. The [port ledger](tools/port_ledger.py) adds a method-by-method view of what is ported.
-
-| Subsystem | Score | Main gaps |
-| --- | ---: | --- |
-| Window, input and game loop | 1 | None: game loop, options, camera, auto-jump, toggle sprint/sneak and frame limiter match |
-| Assets and resources | 1 | None: item models match over 196,290 stacks; the resource pack screen over 3,000 sessions |
-| Network protocol and multiplayer | 1 | None: joins vanilla servers; the dedicated server matches vanilla's files, login, configuration, play and command tree; LAN discovery over 462 cases (offline mode only) |
-| Chunk storage and palettes | 1 | None: client and saves share paletted containers, identical to vanilla over 266 scenarios |
-| Section meshing | 1 | None: 112 scenes and over a million quads identical to vanilla |
-| Rendering | 1 | None: entity models, block entity renderers (407 cases) and animations (296), HUD overlays (2,200 states), the recipe book (600), player list, subtitles and world border match |
-| Lighting | 1 | None: saved and relit light matches vanilla, slabs and stairs included |
-| World generation | 1 | None: 2,352 whole chunks over 225 structure sites, in all three dimensions, identical to vanilla |
-| Region files and saves | 1 | None: saves round-trip with vanilla; worlds from 1.8 to 26.2 upgrade as vanilla's DataFixers do |
-| Entities and physics | 1 | None: attributes, spawn rules, natural spawning (15,500 cases), raids and patrols (1,900), `finalizeSpawn` (24,000) and mob AI (92 scenarios) match |
-| Interaction and inventory | 1 | None: menu clicks over 8,000 sequences; recipe book placement (6,000), buttons (1,200), saved book (1,500), loom and crafter screens (1,600) |
-| Menus, HUD and chat | 1 | None: every command (758 over 39,685 inputs), scoreboards (81,000 operations), the player list (872,000 draw calls), chat and its suggestions (3,000 sessions) match |
-| Audio | 1 | None: the sound engine, sound events, music, situational music, ambience and subtitles match vanilla |
-| Block behaviours and ticking | 1 | None: block updates, random ticks, redstone, dispensers (6,000 cases), crafters (4,000), container spills (4,000), copper golems and the sculk family (435 scenarios) match |
-
-## Licence
-
-[MIT](LICENSE), for the project's original work; dependencies keep their own licences ([notices](THIRD_PARTY_NOTICES.md)). Horizon is made by [Ludovic Marie](https://lu4ovic.com) ([@ludovic111](https://github.com/ludovic111)) and [its contributors](https://github.com/horizon-rust/horizon/graphs/contributors); support it on [GitHub Sponsors](https://github.com/sponsors/ludovic111).
-
-NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. Minecraft is a trademark of Mojang Synergies AB; its code and assets belong to Mojang and Microsoft under the [Minecraft EULA](https://www.minecraft.net/en-us/eula).
+This project is licensed under the [MIT License](LICENSE), matching upstream Horizon. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for included third-party libraries.
