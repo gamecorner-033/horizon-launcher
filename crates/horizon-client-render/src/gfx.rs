@@ -11310,7 +11310,12 @@ impl Renderer {
             // callbacks, one per refresh. Only VSync (Fifo) waits for the
             // display: with it off, vanilla's window draws uncapped.
             if self.config.present_mode == wgpu::PresentMode::Fifo {
+                #[cfg(not(target_os = "linux"))]
                 self.window.pre_present_notify();
+                #[cfg(target_os = "linux")]
+                if std::env::var_os("WAYLAND_DISPLAY").is_some() && std::env::var_os("DISPLAY").is_none() {
+                    self.window.pre_present_notify();
+                }
             }
             if first_frame {
                 startup_step(format_args!("presenting the first frame"));

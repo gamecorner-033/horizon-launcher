@@ -179,15 +179,14 @@ struct EglContext {
 
 impl EglContext {
     fn make_current(&self) {
-        self.instance
-            .make_current(self.display, self.pbuffer, self.pbuffer, Some(self.raw))
-            .unwrap();
+        let _ = self.instance
+            .make_current(self.display, self.pbuffer, self.pbuffer, Some(self.raw));
     }
 
     fn unmake_current(&self) {
-        self.instance
-            .make_current(self.display, None, None, None)
-            .unwrap();
+        #[cfg(not(any(target_os = "linux", target_os = "android")))]
+        let _ = self.instance
+            .make_current(self.display, None, None, None);
     }
 }
 
@@ -283,6 +282,7 @@ impl<'a> core::ops::Deref for AdapterContextLock<'a> {
 
 impl<'a> Drop for AdapterContextLock<'a> {
     fn drop(&mut self) {
+        #[cfg(not(any(target_os = "linux", target_os = "android")))]
         if let Some(egl) = self.egl.take() {
             if let Err(err) = egl.instance.make_current(egl.display, None, None, None) {
                 log::error!("Failed to make EGL context current: {err:?}");
@@ -610,9 +610,12 @@ impl Inner {
 
         // Testing if context can be binded without surface
         // and creating dummy pbuffer surface if not.
-        let pbuffer = if version >= (1, 5)
+        // On Linux, embedded Mali drivers advertise EGL_KHR_surfaceless_context
+        // but fail make_current without a surface. Always allocate a dummy 1x1 pbuffer on Linux.
+        let pbuffer = if (version >= (1, 5)
             || display_extensions.contains("EGL_KHR_surfaceless_context")
-            || cfg!(Emscripten)
+            || cfg!(Emscripten))
+            && !cfg!(target_os = "linux")
         {
             log::debug!("\tEGL context: +surfaceless");
             None
@@ -1134,13 +1137,6 @@ impl Surface {
                 crate::SurfaceError::Lost
             })?;
 
-        // Setting swap interval per-frame ensures the configured present mode (VSync
-        // on/off) is maintained even if configure-time make_current was contested.
-        let _ = self
-            .egl
-            .instance
-            .swap_interval(self.egl.display, if sc.vsync { 1 } else { 0 });
-
         unsafe { gl.disable(glow::SCISSOR_TEST) };
         unsafe { gl.color_mask(true, true, true, true) };
 
@@ -1183,15 +1179,18 @@ impl Surface {
             .map_err(|e| {
                 log::error!("swap_buffers failed: {e}");
                 crate::SurfaceError::Lost
-                // TODO: should we unset the current context here?
             })?;
-        self.egl
-            .instance
-            .make_current(self.egl.display, None, None, None)
-            .map_err(|e| {
-                log::error!("make_current(null) failed: {e}");
-                crate::SurfaceError::Lost
-            })?;
+
+        // On embedded Linux / Mali, do not unbind the EGL context after swap_buffers.
+        // If a dummy pbuffer is configured, restore it; otherwise keep context valid.
+        if let Some(pbuf) = self.egl.pbuffer {
+            let _ = self.egl.instance.make_current(
+                self.egl.display,
+                Some(pbuf),
+                Some(pbuf),
+                Some(self.egl.raw),
+            );
+        }
 
         Ok(())
     }
@@ -1441,10 +1440,20 @@ impl crate::Surface for Surface {
             if let Err(e) = self.egl.instance.swap_interval(self.egl.display, interval) {
                 log::warn!("eglSwapInterval({interval}) failed: {e:?}");
             }
+            #[cfg(not(any(target_os = "linux", target_os = "android")))]
             let _ = self
                 .egl
                 .instance
                 .make_current(self.egl.display, None, None, None);
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            if let Some(pbuf) = self.egl.pbuffer {
+                let _ = self.egl.instance.make_current(
+                    self.egl.display,
+                    Some(pbuf),
+                    Some(pbuf),
+                    Some(self.egl.raw),
+                );
+            }
         }
 
         let mut swapchain = self.swapchain.write();
