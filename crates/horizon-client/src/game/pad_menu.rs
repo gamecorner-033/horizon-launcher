@@ -1782,12 +1782,17 @@ impl Game<'_> {
             return;
         }
         self.pad.menu.os_hidden = !show;
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        return;
         // Controller menus leave the native pointer to its owning player.
-        if !self.keyboard_mouse {
-            return;
-        }
-        if let Some(window) = &self.window {
-            window.set_cursor_visible(show && !self.captured);
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        {
+            if !self.keyboard_mouse {
+                return;
+            }
+            if let Some(window) = &self.window {
+                window.set_cursor_visible(show && !self.captured);
+            }
         }
     }
 

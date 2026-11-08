@@ -1181,8 +1181,8 @@ impl Surface {
                 crate::SurfaceError::Lost
             })?;
 
-        // On embedded Linux / Mali, do not unbind the EGL context after swap_buffers.
-        // If a dummy pbuffer is configured, restore it; otherwise keep context valid.
+        // On embedded Linux / Mali, do not unbind or switch away from sc.surface after swap_buffers.
+        #[cfg(not(target_os = "linux"))]
         if let Some(pbuf) = self.egl.pbuffer {
             let _ = self.egl.instance.make_current(
                 self.egl.display,
@@ -1315,6 +1315,7 @@ impl crate::Surface for Surface {
                     // Some drivers just fail on surface creation seeing `EGL_SINGLE_BUFFER`.
                     if cfg!(any(
                         target_os = "android",
+                        target_os = "linux",
                         target_os = "macos",
                         target_env = "ohos"
                     )) || cfg!(windows)

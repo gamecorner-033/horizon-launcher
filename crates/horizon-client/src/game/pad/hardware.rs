@@ -693,6 +693,11 @@ impl Game<'_> {
     /// Play a vibration on the active pad: a DualSense through its own report, else gilrs' force
     /// feedback, which platforms without it (gilrs on macOS) skip.
     pub(super) fn pad_vibrate(&mut self, rumble: Rumble, pulse: gamepad::Pulse) {
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        if std::env::var("HORIZON_ENABLE_RUMBLE").as_deref() != Ok("1") {
+            let _ = (rumble, pulse);
+            return;
+        }
         let level = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
         if let Some(haptics) = self
             .pad

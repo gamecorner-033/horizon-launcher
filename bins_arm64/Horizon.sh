@@ -171,19 +171,23 @@ if [ -f "${weston_dir}/westonwrap.sh" ]; then
     fi
 
     GFX_MODE="${HORIZON_GFX_MODE:-crusty_x11egl}"
+    WESTON_BACKEND="${HORIZON_WESTON_BACKEND:-headless}"
+    WESTON_RENDERER="${HORIZON_WESTON_RENDERER:-noop}"
 
     if [ "${HORIZON_FORCE_WAYLAND}" = "1" ]; then
         echo "Launching in native Wayland mode..."
         WL_OVERRIDE=""
     else
-        echo "Launching in Xwayland mode (hardware accelerated X11 EGL)..."
+        echo "Launching in Xwayland mode (hardware accelerated X11 EGL via ${WESTON_BACKEND}/${WESTON_RENDERER}/${GFX_MODE})..."
         WL_OVERRIDE="WAYLAND_DISPLAY="
     fi
 
-    CLIENT_LD_PATH="${LIBS_DIR}/crusty_x11egl:${LIBS_DIR}:${weston_dir}/lib_aarch64"
+    export HORIZON_SUBMIT_THREAD="${HORIZON_SUBMIT_THREAD:-0}"
+    export CRUSTY_SHOW_CURSOR=0
 
-    $ESUDO env WRAPPED_LIBRARY_PATH="${LIBS_DIR}" "${weston_dir}/westonwrap.sh" drm gl kiosk "${GFX_MODE}" \
-        env ${WL_OVERRIDE} XDG_SESSION_TYPE="x11" LD_LIBRARY_PATH="${CLIENT_LD_PATH}" \
+    $ESUDO env WRAPPED_LIBRARY_PATH="${LIBS_DIR}" CRUSTY_SHOW_CURSOR=0 HORIZON_SUBMIT_THREAD="${HORIZON_SUBMIT_THREAD}" \
+        "${weston_dir}/westonwrap.sh" "${WESTON_BACKEND}" "${WESTON_RENDERER}" kiosk "${GFX_MODE}" \
+        env ${WL_OVERRIDE} XDG_SESSION_TYPE="x11" HORIZON_SUBMIT_THREAD="${HORIZON_SUBMIT_THREAD}" \
         "${BIN_DIR}/horizon-client" \
             --game-dir "${GAME_DIR}" \
             --home "${GAME_DIR}" \
