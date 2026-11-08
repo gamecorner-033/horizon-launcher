@@ -392,6 +392,9 @@ impl Game<'_> {
             self.native_mod_key(MOD_ID_VEINMINER, "toggle_autotool", "key.keyboard.g");
 
         if key == key_bedrock {
+            if !self.native_on(MOD_ID_BEDROCK_CRAFTING) {
+                return;
+            }
             let enabled = super::bedrock_crafting::with_bedrock_state(|b| {
                 b.enabled = !b.enabled;
                 b.enabled
@@ -407,6 +410,9 @@ impl Game<'_> {
                 bool_label(enabled)
             ));
         } else if key == key_waila {
+            if !self.native_on(MOD_ID_WAILA) {
+                return;
+            }
             let enabled = with_state(|st| {
                 st.waila_enabled = !st.waila_enabled;
                 self.native_set_setting(
@@ -421,6 +427,9 @@ impl Game<'_> {
                 bool_label(enabled)
             ));
         } else if key == key_vm {
+            if !self.native_on(MOD_ID_VEINMINER) {
+                return;
+            }
             let enabled = with_state(|st| {
                 st.veinminer_enabled = !st.veinminer_enabled;
                 self.native_set_setting(
@@ -443,6 +452,9 @@ impl Game<'_> {
                 self.native_chat(&format!("[Veinminer] {}", bool_label(enabled)));
             }
         } else if key == key_autotool {
+            if !self.native_on(MOD_ID_VEINMINER) {
+                return;
+            }
             let enabled = with_state(|st| {
                 st.auto_tool_enabled = !st.auto_tool_enabled;
                 self.native_set_setting(
@@ -514,6 +526,9 @@ impl Game<'_> {
             return;
         }
         self.ensure_rust_mods_loaded();
+        if !self.native_on(MOD_ID_WAILA) {
+            return;
+        }
 
         if let Some((idx, ..)) = self.mob_hit()
             && let Some(mob) = self.mobs.get(idx)
@@ -534,6 +549,9 @@ impl Game<'_> {
             return;
         }
         self.ensure_rust_mods_loaded();
+        if !self.native_on(MOD_ID_VEINMINER) {
+            return;
+        }
         let (auto_tool, save_durability) =
             with_state(|st| (st.auto_tool_enabled, st.save_durability_enabled));
         if !auto_tool {
@@ -724,6 +742,10 @@ impl Game<'_> {
             return;
         }
         self.ensure_rust_mods_loaded();
+        if !self.native_on(MOD_ID_WAILA) {
+            return;
+        }
+        let vm_mod_on = self.native_on(MOD_ID_VEINMINER);
 
         let (
             waila_enabled,
@@ -737,7 +759,7 @@ impl Game<'_> {
                 st.health_bars_enabled,
                 st.vein_preview_enabled,
                 st.claim_badge_enabled,
-                st.veinminer_enabled,
+                st.veinminer_enabled && vm_mod_on,
             )
         });
 

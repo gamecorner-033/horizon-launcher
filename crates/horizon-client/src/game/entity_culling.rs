@@ -151,6 +151,10 @@ impl Game<'_> {
 
     /// Pre-model visibility hook for dynamic block-entity geometry.
     pub(super) fn block_entity_occluded(&self, bounds: Aabb) -> bool {
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        if self.terrain_sections_occlude(bounds) {
+            return true;
+        }
         self.occlusion_hidden(None, 0, Some(bounds))
     }
 
@@ -170,10 +174,15 @@ impl Game<'_> {
         entity: &T,
         render_bounds: Aabb,
     ) -> EntityCullDecision {
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
         if self.settings.horizon.entity_culling == EntityCullingMode::Off
             || self.pack_shadow_casters.0
             || entity.render_glowing(self)
         {
+            return EntityCullDecision::Bypass;
+        }
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        if self.pack_shadow_casters.0 || entity.render_glowing(self) {
             return EntityCullDecision::Bypass;
         }
         // `render_bounds` is already the conservative model and animation
@@ -187,13 +196,17 @@ impl Game<'_> {
             }
             return EntityCullDecision::Hidden;
         }
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        let visible_decision = EntityCullDecision::Bypass;
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
+        let visible_decision = EntityCullDecision::CheckVertices;
         match self.settings.horizon.entity_culling {
             EntityCullingMode::Off => EntityCullDecision::Bypass,
             EntityCullingMode::Synchronous => {
                 if self.entity_hidden_sync(None, 0, Some(bounds)) {
                     EntityCullDecision::Hidden
                 } else {
-                    EntityCullDecision::CheckVertices
+                    visible_decision
                 }
             }
             EntityCullingMode::Asynchronous => {
@@ -201,18 +214,18 @@ impl Game<'_> {
                     return if self.entity_hidden_sync(None, 0, Some(bounds)) {
                         EntityCullDecision::Hidden
                     } else {
-                        EntityCullDecision::CheckVertices
+                        visible_decision
                     };
                 };
                 if !culler.camera_is_stationary() {
-                    return EntityCullDecision::CheckVertices;
+                    return visible_decision;
                 }
                 let Some(query) = culler.query_entity_bounds(bounds) else {
-                    return EntityCullDecision::CheckVertices;
+                    return visible_decision;
                 };
                 culler.sample_entity_aabb(entity.render_id(), &query);
                 match culler.query_result(&query, QuerySource::EntityAabb) {
-                    Some((false, _)) => EntityCullDecision::CheckVertices,
+                    Some((false, _)) => visible_decision,
                     Some((true, Some(proof)))
                         if culler.proof_is_current(
                             &self.world,
@@ -237,6 +250,11 @@ impl Game<'_> {
     /// Reject entities whose padded render bounds lie entirely in sections the
     /// terrain visibility graph cannot reach. Unknown graph cells fail open.
     fn terrain_sections_occlude(&self, bounds: Aabb) -> bool {
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        if !self.entity_section_visibility_valid {
+            return false;
+        }
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
         if !self.entity_section_visibility_valid
             || (self.sync_occlusion_culler.is_none() && self.async_occlusion_culler.is_none())
         {

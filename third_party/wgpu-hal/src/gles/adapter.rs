@@ -636,10 +636,18 @@ impl super::Adapter {
         // We *might* be able to emulate bgra8unorm-storage but currently don't attempt to.
 
         let mut private_caps = super::PrivateCapabilities::empty();
+        // On aarch64 GLES (Mali-G31 / Bifrost), immutable glBufferStorage + persistent mapped
+        // staging buffers cause glCopyBufferSubData into ELEMENT_ARRAY_BUFFER / ARRAY_BUFFER to
+        // offload expensive buffer shadowing and index-bound scanning onto the `mali-utility-wo`
+        // kernel worker thread (~91% of a CPU core). Using standard mutable glBufferData +
+        // CPU-emulated map (`glBufferSubData` / `glTexSubImage2D`) eliminates both `mali-utility-wo`
+        // stalls and per-frame glMapBufferRange / glUnmapBuffer overhead.
+        let emulate_es_map = cfg!(target_arch = "aarch64") && es_ver.is_some();
         private_caps.set(
             super::PrivateCapabilities::BUFFER_ALLOCATION,
-            extensions.contains("GL_EXT_buffer_storage")
-                || extensions.contains("GL_ARB_buffer_storage"),
+            !emulate_es_map
+                && (extensions.contains("GL_EXT_buffer_storage")
+                    || extensions.contains("GL_ARB_buffer_storage")),
         );
         private_caps.set(
             super::PrivateCapabilities::SHADER_BINDING_LAYOUT,
@@ -916,7 +924,7 @@ impl super::Adapter {
 
         workarounds.set(
             super::Workarounds::EMULATE_BUFFER_MAP,
-            cfg!(any(webgl, Emscripten)),
+            cfg!(any(webgl, Emscripten)) || emulate_es_map,
         );
 
         let r = renderer.to_lowercase();

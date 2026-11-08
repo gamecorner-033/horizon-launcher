@@ -180,6 +180,9 @@ fn tile_uv(uv: vec2<f32>) -> vec2<f32> {
     return uv - max(ceil(uv) - 1.0, vec2(0.0));
 }
 fn sprite(tiled: vec2<f32>, layer: u32) -> vec4<f32> {
+    if globals.filtering.w != 0.0 {
+        return sprite_level(tile_uv(tiled), layer, 0.0);
+    }
     // The gradients come from the unwrapped UV, so the mip level holds across block seams.
     return sprite_at(tiled, layer, dpdx(tiled), dpdy(tiled));
 }
@@ -188,6 +191,9 @@ fn sprite(tiled: vec2<f32>, layer: u32) -> vec4<f32> {
 fn sprite_at(tiled: vec2<f32>, layer: u32, du: vec2<f32>, dv: vec2<f32>) -> vec4<f32> {
     // terrain.fsh's two sampling paths: sampleRGSS for RGSS, sampleNearest otherwise.
     let uv = tile_uv(tiled);
+    if globals.filtering.w != 0.0 {
+        return sprite_level(uv, layer, 0.0);
+    }
     // The wrap shifts a face's UVs by whole blocks, so half of one tells a tile's face from a
     // block's (whose UVs stay inside its sprite).
     let tiled_face = any(tiled - uv >= vec2(0.5));

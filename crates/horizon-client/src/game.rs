@@ -16977,16 +16977,17 @@ impl Game<'_> {
                 .map(|h| {
                     let state = self.world.block(h.pos[0], h.pos[1], h.pos[2]);
                     let f = self.res.facts().get(state);
-                    outline_after_terrain = self
-                        .pack
-                        .render
-                        .model_catalog
-                        .collect(state, BlockPos::new(h.pos[0], h.pos[1], h.pos[2]))
-                        .is_ok_and(|models| {
-                            models
-                                .iter()
-                                .any(|(_, model)| model.faces.iter().any(|f| f.translucent))
-                        });
+                    outline_after_terrain = !f.solid_render
+                        && self
+                            .pack
+                            .render
+                            .model_catalog
+                            .collect(state, BlockPos::new(h.pos[0], h.pos[1], h.pos[2]))
+                            .is_ok_and(|models| {
+                                models
+                                    .iter()
+                                    .any(|(_, model)| model.faces.iter().any(|f| f.translucent))
+                            });
                     let o = if f.outline_offset {
                         self.pack
                             .context
@@ -17143,6 +17144,7 @@ impl Game<'_> {
         let (celestial, stars) = if title {
             (Vec::new(), None)
         } else if self.dim == Dim::Overworld
+            && self.settings.horizon.sky
             && self.potions.effects.get("darkness").is_none()
             && self.potions.effects.get("blindness").is_none()
         {

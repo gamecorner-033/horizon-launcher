@@ -167,7 +167,9 @@ pub const MIN_SECTIONS: usize = 1600;
 /// frames without one draw flat only where `for_vanilla` says.
 /// `HORIZON_FLAT_DRAWS=1` draws every frame flat, `0` none.
 pub fn wanted(adapter: &wgpu::Adapter, device: &wgpu::Device) -> bool {
-    std::env::var("HORIZON_FLAT_DRAWS").as_deref() != Ok("0") && supported(adapter, device)
+    !cfg!(all(target_arch = "aarch64", not(test)))
+        && std::env::var("HORIZON_FLAT_DRAWS").as_deref() != Ok("0")
+        && supported(adapter, device)
 }
 
 /// Whether frames without a shader pack's terrain draw flat: where the backend

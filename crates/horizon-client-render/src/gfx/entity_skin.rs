@@ -225,7 +225,10 @@ impl EntitySkin {
     /// then draws every model).
     pub(super) fn new(device: &wgpu::Device, compute: bool) -> Option<Self> {
         // HORIZON_NO_ENTITY_SKIN: every model on the CPU path (A/B runs, a driver's bug).
+        // On aarch64 GLES handhelds (Mali-G31), CPU NEON posing is faster and avoids a per-frame
+        // GLES compute pass + memory barrier job-chain split and mid-frame SSBO reallocations.
         if !compute
+            || cfg!(all(target_arch = "aarch64", not(test)))
             || device.limits().max_storage_buffers_per_shader_stage < 4
             || std::env::var_os("HORIZON_NO_ENTITY_SKIN").is_some()
         {

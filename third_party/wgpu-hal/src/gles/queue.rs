@@ -458,7 +458,22 @@ impl super::Queue {
                         };
                     }
                     (None, None) => {
-                        todo!()
+                        if core::ptr::eq(src, dst) {
+                            let mut map_state = lock(&src.map_state);
+                            let data = map_state.data.as_mut().unwrap().as_mut_slice();
+                            data.copy_within(
+                                copy.src_offset as usize..copy.src_offset as usize + size,
+                                copy.dst_offset as usize,
+                            );
+                        } else {
+                            let src_state = lock(&src.map_state);
+                            let mut dst_state = lock(&dst.map_state);
+                            let src_data = &src_state.data.as_ref().unwrap().as_slice()
+                                [copy.src_offset as usize..copy.src_offset as usize + size];
+                            let dst_data = &mut dst_state.data.as_mut().unwrap().as_mut_slice()
+                                [copy.dst_offset as usize..copy.dst_offset as usize + size];
+                            dst_data.copy_from_slice(src_data);
+                        }
                     }
                 }
                 unsafe { gl.bind_buffer(copy_src_target, None) };

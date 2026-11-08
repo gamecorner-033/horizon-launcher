@@ -1624,6 +1624,18 @@ const SPRITE_NEAREST: wgpu::SamplerDescriptor<'static> = wgpu::SamplerDescriptor
 /// edge) in every Texture Filtering mode, with `anisotropy` samples when it is above 1 (wgpu
 /// then needs a linear mipmap filter too).
 fn sprite_sampler_descriptor(anisotropy: u16) -> wgpu::SamplerDescriptor<'static> {
+    if cfg!(all(target_arch = "aarch64", not(test))) && anisotropy <= 1 {
+        return wgpu::SamplerDescriptor {
+            label: Some("Block sprites (nearest)"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            anisotropy_clamp: 1,
+            ..Default::default()
+        };
+    }
     wgpu::SamplerDescriptor {
         label: Some("Block sprites (filtered)"),
         address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -4505,9 +4517,13 @@ impl Renderer {
         let static_entity_index_quads = 1 << 14;
         let static_entity_indices = Self::quad_indices(&device, static_entity_index_quads);
         let flat_wanted = flat::wanted(&adapter, &device);
-        // Metal draws solid terrain in two passes (`split_solid`): meshes put all
-        // their opaque quads first, so each pass draws its part in a run or two.
-        crate::mesher::group_parts(adapter.get_info().backend == wgpu::Backend::Metal);
+        // Metal and tile-based mobile GPUs (Mali-G31 on aarch64) draw solid terrain in two passes
+        // (`split_solid`): meshes put all their opaque quads first, so `fs_opaque` (no discard)
+        // keeps hardware Early-Z and Forward Pixel Kill (FPK) active.
+        crate::mesher::group_parts(
+            adapter.get_info().backend == wgpu::Backend::Metal
+                || cfg!(all(target_arch = "aarch64", not(test))),
+        );
         // Readable as storage where flat draws run: a shader pack's terrain program reads them.
         // On aarch64 handhelds, start at 256K vertices (~7 MiB) instead of 1M (~28 MiB) to save shared RAM.
         let arena = arena::Arena::new(
@@ -7892,7 +7908,11 @@ impl Renderer {
                 } else {
                     0.0
                 },
-                0.0,
+                if cfg!(all(target_arch = "aarch64", not(test))) && self.texture_filtering == 0 {
+                    1.0
+                } else {
+                    0.0
+                },
             ],
             hdr_windows: self.hdr.as_ref().map_or([[0.0; 4]; 2], hdr::Hdr::windows),
             hdr_light: [
@@ -8360,7 +8380,9 @@ impl Renderer {
         // ones (`Part`), each solid pass drawing its own: `[..opaque_draws]`,
         // then the rest; phase 2 likewise. A fading list's quads all draw in the
         // cutout pass.
-        let split_solid = self.info.backend == wgpu::Backend::Metal;
+        let split_solid = (self.info.backend == wgpu::Backend::Metal
+            || cfg!(all(target_arch = "aarch64", not(test))))
+            && !gpu_frame;
         let parts = |fading: bool| -> &'static [(u8, Quads)] {
             match (split_solid, fading) {
                 (false, _) => &[(0, Quads::All)],
@@ -8532,7 +8554,16 @@ impl Renderer {
         // (at least 15) of the visible list. Cached views avoid needless sorts.
         self.translucent_draws.clear();
         let count = visible.len() + visible_lods.len();
-        let budget = (count / 8).max(15).min(count);
+        let budget = if cfg!(all(target_arch = "aarch64", not(test))) {
+            2.min(count)
+        } else {
+            (count / 8).max(15).min(count)
+        };
+        let mut resort_budget = if cfg!(all(target_arch = "aarch64", not(test))) {
+            2usize
+        } else {
+            usize::MAX
+        };
         self.translucency_cursor %= count.max(1);
         for (i, v) in visible.iter().enumerate().rev() {
             let s = self.sections.get_mut(v.slot);
@@ -8546,11 +8577,15 @@ impl Renderer {
                     self.layout.min_y() + v.key.1 * 16,
                     v.key.2 * 16,
                 ];
-                if (!s.sort.is_sorted() || nearby || scheduled)
+                let was_sorted = s.sort.is_sorted();
+                if (!was_sorted || ((nearby || scheduled) && resort_budget > 0))
                     && let Some(indices) =
                         s.sort
                             .update(camera.to_array(), origin, &mut self.translucent_sorter)
                 {
+                    if was_sorted {
+                        resort_budget = resort_budget.saturating_sub(1);
+                    }
                     self.uploads.buffer(
                         &mut encoder,
                         self.sorted_indices.buffer(index_page),
@@ -9837,7 +9872,9 @@ impl Renderer {
         // Two solid passes only where a discard costs the GPU its hidden surface
         // removal: Apple's tiled GPUs, behind Metal. Elsewhere the second pass
         // would double the solid draw calls and vertex work for nothing.
-        let split_solid = self.info.backend == wgpu::Backend::Metal;
+        let split_solid = (self.info.backend == wgpu::Backend::Metal
+            || cfg!(all(target_arch = "aarch64", not(test))))
+            && !gpu_frame;
         let translucent_pipeline = material.map_or(&self.translucent, |(m, _)| &m.translucent);
         let pack_flat = material.and_then(|(m, _)| m.flat.as_ref());
         // A material stage's translucent pass reads a copy of the depth the solid terrain

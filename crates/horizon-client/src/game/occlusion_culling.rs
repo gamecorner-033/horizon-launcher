@@ -2037,6 +2037,12 @@ impl Game<'_> {
         self.entity_section_visibility_valid = false;
         let entity_mode = self.settings.horizon.entity_culling;
         let requested = entity_mode != EntityCullingMode::Off;
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        let eligible = (requested || self.settings.horizon.cave_culling)
+            && self.model_packs_are_vanilla()
+            && self.player.is_some()
+            && !self.spectator();
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
         let eligible = requested
             // Packs can replace opaque models, so their terrain is not a safe occluder.
             && self.model_packs_are_vanilla()
@@ -2062,6 +2068,12 @@ impl Game<'_> {
         self.entity_section_visibility_valid = self.settings.horizon.cave_culling
             && !camera_facts.solid_render
             && self.entity_section_camera.is_some();
+        if !requested {
+            self.sync_occlusion_culler = None;
+            self.async_occlusion_culler = None;
+            self.async_occlusion_culling_failed = false;
+            return;
+        }
 
         let wants_async = entity_mode == EntityCullingMode::Asynchronous;
         let wants_sync = entity_mode == EntityCullingMode::Synchronous;
@@ -2084,8 +2096,12 @@ impl Game<'_> {
         }
 
         let async_unavailable = wants_async && self.async_occlusion_culler.is_none();
+        #[cfg(all(target_arch = "aarch64", not(test)))]
+        let sync_budget = 256;
+        #[cfg(not(all(target_arch = "aarch64", not(test))))]
+        let sync_budget = 8_192;
         self.sync_occlusion_culler = (wants_sync || async_unavailable)
-            .then(|| OcclusionCuller::new(camera.to_array(), 8_192));
+            .then(|| OcclusionCuller::new(camera.to_array(), sync_budget));
     }
 
     pub(super) fn finish_async_occlusion_culling(&mut self) {
