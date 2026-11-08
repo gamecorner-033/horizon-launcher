@@ -114,9 +114,9 @@ fn is_muos(pad: &gilrs::Gamepad) -> bool {
 fn muos_gilrs_button(button: Button) -> &'static [gilrs::Button] {
     use gilrs::Button as G;
     match button {
-        Button::South => &[G::South],
-        Button::East => &[G::East],
-        Button::West => &[G::C],
+        Button::South => &[G::South, G::East, G::C],
+        Button::East => &[G::East, G::South],
+        Button::West => &[G::C, G::West],
         Button::North => &[G::North],
         Button::LeftBumper => &[G::West],
         Button::RightBumper => &[G::Z],
@@ -134,7 +134,29 @@ fn muos_gilrs_button(button: Button) -> &'static [gilrs::Button] {
 }
 
 fn muos_button_pressed(pad: &gilrs::Gamepad, button: Button) -> bool {
-    muos_gilrs_button(button).iter().any(|&b| pad.is_pressed(b))
+    if muos_gilrs_button(button).iter().any(|&b| pad.is_pressed(b)) {
+        return true;
+    }
+    use gilrs::Axis as A;
+    match button {
+        Button::DPadUp => {
+            pad.axis_data(A::DPadY).is_some_and(|a| a.value() > 0.4)
+                || pad.axis_data(A::LeftStickY).is_some_and(|a| a.value() > 0.4)
+        }
+        Button::DPadDown => {
+            pad.axis_data(A::DPadY).is_some_and(|a| a.value() < -0.4)
+                || pad.axis_data(A::LeftStickY).is_some_and(|a| a.value() < -0.4)
+        }
+        Button::DPadLeft => {
+            pad.axis_data(A::DPadX).is_some_and(|a| a.value() < -0.4)
+                || pad.axis_data(A::LeftStickX).is_some_and(|a| a.value() < -0.4)
+        }
+        Button::DPadRight => {
+            pad.axis_data(A::DPadX).is_some_and(|a| a.value() > 0.4)
+                || pad.axis_data(A::LeftStickX).is_some_and(|a| a.value() > 0.4)
+        }
+        _ => false,
+    }
 }
 
 fn is_dualsense(pad: &gilrs::Gamepad) -> bool {
@@ -337,6 +359,16 @@ fn state_of(pad: &gilrs::Gamepad) -> PadState {
     state.left = left;
     state.right = right;
     if is_muos_pad {
+        // Handheld D-pad to left-stick bridge for devices without physical analog sticks (RG34XX-SP)
+        if state.left == [0.0, 0.0] {
+            let mut sx = 0.0f32;
+            let mut sy = 0.0f32;
+            if state.held(Button::DPadLeft) { sx -= 1.0; }
+            if state.held(Button::DPadRight) { sx += 1.0; }
+            if state.held(Button::DPadUp) { sy += 1.0; }
+            if state.held(Button::DPadDown) { sy -= 1.0; }
+            state.left = [sx, sy];
+        }
         let lt = if pad.is_pressed(gilrs::Button::Select) { 1.0 } else { 0.0 };
         let rt = if pad.is_pressed(gilrs::Button::Start) { 1.0 } else { 0.0 };
         state.triggers = [lt, rt];
@@ -816,10 +848,10 @@ mod tests {
         assert_eq!(muos_gilrs_button(Button::RightTrigger), &[G::Start]);
         assert_eq!(muos_gilrs_button(Button::LeftStick), &[G::RightTrigger2, G::LeftThumb]);
         assert_eq!(muos_gilrs_button(Button::RightStick), &[G::Mode, G::RightThumb]);
-        assert_eq!(muos_gilrs_button(Button::West), &[G::C]);
+        assert_eq!(muos_gilrs_button(Button::West), &[G::C, G::West]);
         assert_eq!(muos_gilrs_button(Button::North), &[G::North]);
-        assert_eq!(muos_gilrs_button(Button::South), &[G::South]);
-        assert_eq!(muos_gilrs_button(Button::East), &[G::East]);
+        assert_eq!(muos_gilrs_button(Button::South), &[G::South, G::East, G::C]);
+        assert_eq!(muos_gilrs_button(Button::East), &[G::East, G::South]);
         assert_eq!(muos_gilrs_button(Button::DPadUp), &[G::DPadUp]);
         assert_eq!(muos_gilrs_button(Button::DPadDown), &[G::DPadDown]);
         assert_eq!(muos_gilrs_button(Button::DPadLeft), &[G::DPadLeft]);
