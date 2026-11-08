@@ -42,4 +42,6 @@
 /bins_arm64/horizon-prepare
 *.zip
 *.tar.gz
+publish_release_*.py
+.github_token
 
