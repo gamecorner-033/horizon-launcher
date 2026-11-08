@@ -114,9 +114,9 @@ fn is_muos(pad: &gilrs::Gamepad) -> bool {
 fn muos_gilrs_button(button: Button) -> &'static [gilrs::Button] {
     use gilrs::Button as G;
     match button {
-        Button::South => &[G::South, G::East, G::C],
-        Button::East => &[G::East, G::South],
-        Button::West => &[G::C, G::West],
+        Button::South => &[G::South],
+        Button::East => &[G::East],
+        Button::West => &[G::C],
         Button::North => &[G::North],
         Button::LeftBumper => &[G::West],
         Button::RightBumper => &[G::Z],
@@ -169,14 +169,6 @@ fn is_dualsense(pad: &gilrs::Gamepad) -> bool {
 /// Ultimate 2's Linux/BT rows put the right stick on a2/a3 — without them
 /// look never moves (#4343).
 const EXTRA_SDL_MAPPINGS: &str = concat!(
-    // Anbernic H700 Handhelds (RG35XX SP, RG35XX Plus, RG35XX H, RG34XX SP) under muOS
-    "19000000010000000100000000010000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "00000019000100000001000001000000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "00000019000100000001000000010000,muOS-Keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "19000000010000000100000000010000,Deeplay-keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "00000019000100000001000001000000,Deeplay-keys,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "19000000010000000100000000010000,Anbernic RG34XX-SP Controller,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
-    "19000000010000000100000000010000,Anbernic RG35XX SP,a:b0,b:b1,y:b2,x:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b9,lefttrigger:b10,righttrigger:b11,rightstick:b12,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,platform:Linux,\n",
     "03000000c82d00001260000011010000,8BitDo Ultimate 2,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:a5,leftx:a0,lefty:a1,paddle1:b17,paddle2:b16,paddle3:b2,paddle4:b5,rightshoulder:b7,rightstick:b14,righttrigger:a4,rightx:a2,righty:a3,start:b11,x:b3,y:b4,platform:Linux,\n",
     "05000000c82d00001260000001000000,8BitDo Ultimate 2,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:a5,leftx:a0,lefty:a1,paddle1:b17,paddle2:b16,paddle3:b2,paddle4:b5,rightshoulder:b7,rightstick:b14,righttrigger:a4,rightx:a2,righty:a3,start:b11,x:b3,y:b4,platform:Linux,\n",
     "03000000c82d00000b31000014010000,8BitDo Ultimate 2,a:b0,b:b1,back:b6,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b8,leftshoulder:b4,leftstick:b9,lefttrigger:a2,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b10,righttrigger:a5,rightx:a3,righty:a4,start:b7,x:b2,y:b3,platform:Linux,\n",
@@ -853,10 +845,10 @@ mod tests {
         assert_eq!(muos_gilrs_button(Button::RightTrigger), &[G::Start]);
         assert_eq!(muos_gilrs_button(Button::LeftStick), &[G::RightTrigger2, G::LeftThumb]);
         assert_eq!(muos_gilrs_button(Button::RightStick), &[G::Mode, G::RightThumb]);
-        assert_eq!(muos_gilrs_button(Button::West), &[G::C, G::West]);
+        assert_eq!(muos_gilrs_button(Button::West), &[G::C]);
         assert_eq!(muos_gilrs_button(Button::North), &[G::North]);
-        assert_eq!(muos_gilrs_button(Button::South), &[G::South, G::East, G::C]);
-        assert_eq!(muos_gilrs_button(Button::East), &[G::East, G::South]);
+        assert_eq!(muos_gilrs_button(Button::South), &[G::South]);
+        assert_eq!(muos_gilrs_button(Button::East), &[G::East]);
         assert_eq!(muos_gilrs_button(Button::DPadUp), &[G::DPadUp]);
         assert_eq!(muos_gilrs_button(Button::DPadDown), &[G::DPadDown]);
         assert_eq!(muos_gilrs_button(Button::DPadLeft), &[G::DPadLeft]);

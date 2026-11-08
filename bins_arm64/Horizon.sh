@@ -110,8 +110,8 @@ export CRUSTY_LIBSDL="/usr/lib64/libSDL2.so"
 # CRUSTY_SHOW_CURSOR must be 0: Crusty cursor conflicts with Weston compositor
 export CRUSTY_SHOW_CURSOR=0
 
-# SDL Game Controller mapping for Anbernic RG35XX SP (Deeplay-keys / muOS-Keys)
-export SDL_GAMECONTROLLERCONFIG="${SDL_GAMECONTROLLERCONFIG:-19000000010000000100000000010000,Deeplay-keys,a:b3,b:b4,x:b6,y:b5,leftshoulder:b7,rightshoulder:b8,lefttrigger:b13,righttrigger:b14,guide:b11,start:b10,back:b9,dpup:h0.1,dpleft:h0.8,dpright:h0.2,dpdown:h0.4,volumedown:b1,volumeup:b2,leftx:a0,lefty:a1,leftstick:b12,rightx:a2,righty:a3,rightstick:b15,platform:Linux,}"
+# Unset SDL_GAMECONTROLLERCONFIG so gilrs uses native evdev driver codes via muos_gilrs_button
+unset SDL_GAMECONTROLLERCONFIG
 
 # Graphics & Performance environment for Mali-G31 MP2
 export WGPU_BACKEND=gl
