@@ -84,6 +84,32 @@ if [ ! -f "${GAME_DIR}/resources/asset-index.json" ] || [ ! -d "${GAME_DIR}/reso
     exit 1
 fi
 
+# Memory Protection: ensure a 512MB swap file exists on SD card to prevent kswapd thrashing & OOM freezes
+SWAP_TOTAL=$(free -m 2>/dev/null | awk '/Swap:/ {print $2}')
+SWAPFILE="/mnt/sdcard/horizon.swap"
+if [ "${SWAP_TOTAL:-0}" -eq 0 ]; then
+    if [ ! -f "$SWAPFILE" ]; then
+        echo "Creating 512MB swap file on SD card at ${SWAPFILE}..."
+        dd if=/dev/zero of="$SWAPFILE" bs=1M count=512 2>/dev/null || true
+        chmod 600 "$SWAPFILE" 2>/dev/null || true
+        mkswap "$SWAPFILE" 2>/dev/null || true
+    fi
+    if [ -f "$SWAPFILE" ]; then
+        echo "Enabling swap file..."
+        swapon "$SWAPFILE" 2>/dev/null || true
+    fi
+fi
+
+# Free up memory caches before compositor & engine boot
+sync
+echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+echo 65536 > /proc/sys/vm/min_free_kbytes 2>/dev/null || true
+
+export MIMALLOC_PURGE_DELAY=0
+export MIMALLOC_ARENA_RESERVE=0
+export WESTON_DRM_PAGEFLIP_TIMEOUT=1
+export WESTON_REPAINT_WINDOW=16
+
 # Export library paths for both direct and wrapped launch
 export LD_LIBRARY_PATH="${LIBS_DIR}:${LD_LIBRARY_PATH:-/usr/lib:/lib}"
 export WRAPPED_LIBRARY_PATH="${LIBS_DIR}"

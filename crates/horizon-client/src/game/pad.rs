@@ -326,7 +326,7 @@ impl Game<'_> {
         }
         let threshold = self.settings.controller.trigger_threshold;
         let edges = self.pad.edges.update(&state, threshold);
-        if activity && self.pad_focused() {
+        if (activity || cfg!(all(target_arch = "aarch64", target_os = "linux"))) && self.pad_focused() {
             self.last_input = Instant::now();
             self.pad.in_use = true;
         }
@@ -428,7 +428,7 @@ impl Game<'_> {
     /// Input from the pad counts while the window has focus, or always for
     /// the virtual pad (a script can't focus the window).
     fn pad_focused(&self) -> bool {
-        self.focused || self.pad.virtual_input
+        self.focused || self.pad.virtual_input || cfg!(all(target_arch = "aarch64", target_os = "linux"))
     }
 
     fn pad_button(

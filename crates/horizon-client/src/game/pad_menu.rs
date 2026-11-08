@@ -1345,7 +1345,7 @@ impl Game<'_> {
             self.pad_yield_input(event_loop);
         }
         // Focus lands on the menu as it opens when the pad was in use.
-        if self.pad.in_use && self.pad.menu.pos.is_none() && self.pad.menu.open_polls == 3 {
+        if self.pad.in_use && self.pad.menu.pos.is_none() && self.pad.menu.open_polls >= 1 {
             self.pad_take_pointer(event_loop);
         }
         if !self.pad.in_use && !self.pad.menu.keyboard {
