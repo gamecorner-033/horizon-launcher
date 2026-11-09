@@ -13,12 +13,9 @@ use std::{
 
 const MOD_ID_WAILA: &str = "waila_inspector";
 const MOD_ID_VEINMINER: &str = "veinminer_autotool";
-pub const MOD_ID_BEDROCK_CRAFTING: &str = "bedrock_crafting";
 
 struct RustClientModsState {
     initialized: bool,
-    // Mod #1: Bedrock Crafting UI
-    bedrock_crafting_enabled: bool,
     // Mod #4 settings
     waila_enabled: bool,
     health_bars_enabled: bool,
@@ -40,7 +37,6 @@ impl Default for RustClientModsState {
     fn default() -> Self {
         Self {
             initialized: false,
-            bedrock_crafting_enabled: true,
             waila_enabled: true,
             health_bars_enabled: true,
             vein_preview_enabled: true,
@@ -144,15 +140,6 @@ impl Game<'_> {
                 return;
             }
             st.initialized = true;
-            if let Some(v) = self.native_setting(MOD_ID_BEDROCK_CRAFTING, "enabled") {
-                let enabled = v != "0";
-                st.bedrock_crafting_enabled = enabled;
-                super::bedrock_crafting::with_bedrock_state(|b| b.enabled = enabled);
-            }
-            if let Some(v) = self.native_setting(MOD_ID_BEDROCK_CRAFTING, "craftable_only") {
-                let craftable_only = v == "1";
-                super::bedrock_crafting::with_bedrock_state(|b| b.craftable_only = craftable_only);
-            }
             if let Some(v) = self.native_setting(MOD_ID_WAILA, "waila_enabled") {
                 st.waila_enabled = v != "0";
             }
@@ -177,19 +164,9 @@ impl Game<'_> {
         });
     }
 
-    /// Registers Mod #1 (Bedrock Crafting), Mod #4 (WAILA), and Mod #5 (Veinminer) in `Options > Mods`.
+    /// Registers Mod #4 (WAILA) and Mod #5 (Veinminer) in `Options > Mods`.
     pub(super) fn rust_mods_list(&mut self, mods: &mut Vec<NativeMod>) {
         self.ensure_rust_mods_loaded();
-        mods.push(NativeMod {
-            id: MOD_ID_BEDROCK_CRAFTING.to_owned(),
-            title: "Bedrock Crafting UI 1.0".to_owned(),
-            description: "Bedrock Edition categorized crafting UI (Construction, Equipment, Items, Nature), one-click instant crafting, controller bumper navigation, and recipe book sync.".to_owned(),
-            keys: vec![[
-                "toggle_bedrock_crafting".to_owned(),
-                "Toggle Bedrock Crafting UI".to_owned(),
-                "key.keyboard.b".to_owned(),
-            ]],
-        });
         mods.push(NativeMod {
             id: MOD_ID_WAILA.to_owned(),
             title: "WAILA & Health Bars 1.0".to_owned(),
@@ -223,19 +200,6 @@ impl Game<'_> {
     pub(super) fn rust_mods_settings(&mut self, mod_id: &str, buttons: &mut Vec<String>) {
         self.ensure_rust_mods_loaded();
         with_state(|st| match mod_id {
-            MOD_ID_BEDROCK_CRAFTING => {
-                let (enabled, craftable_only) = super::bedrock_crafting::with_bedrock_state(|b| {
-                    (b.enabled, b.craftable_only)
-                });
-                buttons.push(format!(
-                    "Bedrock Crafting UI: {}",
-                    bool_label(enabled)
-                ));
-                buttons.push(format!(
-                    "Filter Craftable Only: {}",
-                    bool_label(craftable_only)
-                ));
-            }
             MOD_ID_WAILA => {
                 buttons.push(format!(
                     "Block Inspector HUD: {}",
@@ -277,29 +241,6 @@ impl Game<'_> {
         self.ensure_rust_mods_loaded();
         let mut send_vm_cmd: Option<bool> = None;
         with_state(|st| match (mod_id, button) {
-            (MOD_ID_BEDROCK_CRAFTING, 0) => {
-                let enabled = super::bedrock_crafting::with_bedrock_state(|b| {
-                    b.enabled = !b.enabled;
-                    b.enabled
-                });
-                st.bedrock_crafting_enabled = enabled;
-                self.native_set_setting(
-                    MOD_ID_BEDROCK_CRAFTING,
-                    "enabled",
-                    if enabled { "1" } else { "0" },
-                );
-            }
-            (MOD_ID_BEDROCK_CRAFTING, 1) => {
-                let craftable_only = super::bedrock_crafting::with_bedrock_state(|b| {
-                    b.craftable_only = !b.craftable_only;
-                    b.craftable_only
-                });
-                self.native_set_setting(
-                    MOD_ID_BEDROCK_CRAFTING,
-                    "craftable_only",
-                    if craftable_only { "1" } else { "0" },
-                );
-            }
             (MOD_ID_WAILA, 0) => {
                 st.waila_enabled = !st.waila_enabled;
                 self.native_set_setting(
@@ -381,35 +322,12 @@ impl Game<'_> {
         }
         self.ensure_rust_mods_loaded();
 
-        let key_bedrock = self.native_mod_key(
-            MOD_ID_BEDROCK_CRAFTING,
-            "toggle_bedrock_crafting",
-            "key.keyboard.b",
-        );
         let key_waila = self.native_mod_key(MOD_ID_WAILA, "toggle_waila", "key.keyboard.h");
         let key_vm = self.native_mod_key(MOD_ID_VEINMINER, "toggle_veinminer", "key.keyboard.v");
         let key_autotool =
             self.native_mod_key(MOD_ID_VEINMINER, "toggle_autotool", "key.keyboard.g");
 
-        if key == key_bedrock {
-            if !self.native_on(MOD_ID_BEDROCK_CRAFTING) {
-                return;
-            }
-            let enabled = super::bedrock_crafting::with_bedrock_state(|b| {
-                b.enabled = !b.enabled;
-                b.enabled
-            });
-            with_state(|st| st.bedrock_crafting_enabled = enabled);
-            self.native_set_setting(
-                MOD_ID_BEDROCK_CRAFTING,
-                "enabled",
-                if enabled { "1" } else { "0" },
-            );
-            self.native_chat(&format!(
-                "[Bedrock Crafting UI] {}",
-                bool_label(enabled)
-            ));
-        } else if key == key_waila {
+        if key == key_waila {
             if !self.native_on(MOD_ID_WAILA) {
                 return;
             }

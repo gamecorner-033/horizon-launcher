@@ -846,30 +846,6 @@ impl Game<'_> {
                     }
                 }
             }
-            Button::West
-                if self.is_bedrock_crafting_active()
-                    && self.carried.is_none()
-                    && self.gui_scale().is_some_and(|b| {
-                        let rect = self.bedrock_panel_rect(&b);
-                        let in_cursor = self.cursor.0 >= rect[0]
-                            && self.cursor.0 < rect[0] + rect[2]
-                            && self.cursor.1 >= rect[1]
-                            && self.cursor.1 < rect[1] + rect[3];
-                        let in_focus = self.pad.menu.focus.as_ref().is_some_and(|f| {
-                            let c = f.center();
-                            c.0 >= rect[0]
-                                && c.0 < rect[0] + rect[2]
-                                && c.1 >= rect[1]
-                                && c.1 < rect[1] + rect[3]
-                        });
-                        in_cursor || in_focus
-                    }) =>
-            {
-                super::bedrock_crafting::with_bedrock_state(|st| {
-                    st.craftable_only = !st.craftable_only;
-                    st.page = 0;
-                });
-            }
             Button::South | Button::West => {
                 self.pad_take_pointer(event_loop);
                 self.pad_pointer_button(event_loop, button == Button::West, true);
@@ -925,19 +901,6 @@ impl Game<'_> {
             // Bumpers switch tabs (creative, Create World, the graphics sidebar, ...).
             Button::LeftBumper | Button::RightBumper => {
                 self.pad_tab(event_loop, button == Button::RightBumper);
-            }
-            // Triggers page through Bedrock Crafting recipes
-            Button::LeftTrigger | Button::RightTrigger
-                if self.is_bedrock_crafting_active() =>
-            {
-                let next = button == Button::RightTrigger;
-                super::bedrock_crafting::with_bedrock_state(|st| {
-                    if next {
-                        st.page = st.page.saturating_add(1);
-                    } else if st.page > 0 {
-                        st.page -= 1;
-                    }
-                });
             }
             _ => {}
         }

@@ -292,7 +292,6 @@ mod native_world_edit;
 mod native_world_read;
 mod native_world_seed;
 pub mod rust_mods;
-pub mod bedrock_crafting;
 mod natural_spawning;
 mod nautili;
 mod net_harness;
@@ -9592,12 +9591,7 @@ impl Game<'_> {
         }
         let width = self.native_screen_width().unwrap_or(176.0);
         let (x, y) = batch.centered_origin(width, self.screen_height());
-        let bedrock_shift = if self.is_bedrock_crafting_active() && batch.width < 380.0 {
-            68.0
-        } else {
-            0.0
-        };
-        (x + self.recipe_book_shift(batch.width) + bedrock_shift, y)
+        (x + self.recipe_book_shift(batch.width), y)
     }
     /// Slot ids: 0..36 player inventory, 100..109 crafting grid, 200 result.
     fn container_kind(&self) -> Option<&BlockEntity> {
@@ -10089,11 +10083,7 @@ impl Game<'_> {
         self.draw_inventory_slots(batch, ox, oy);
         self.draw_hovered_slot_highlight(batch, true, ox, oy);
         self.draw_sort_buttons(batch, ox, oy);
-        if self.is_bedrock_crafting_active() {
-            self.draw_bedrock_crafting_ui(batch);
-        } else {
-            self.draw_recipe_book(batch);
-        }
+        self.draw_recipe_book(batch);
         let effect_tip = if self.container.is_none() && self.craft_size == 2 && !self.mount_active()
         {
             self.draw_inventory_effects(batch, (ox, oy), 176)
@@ -10958,9 +10948,6 @@ impl Game<'_> {
     fn inventory_press(&mut self, right: bool) {
         use horizon_client::container_screen::Target;
         use horizon_client::menu::Input;
-        if self.click_bedrock_crafting(right) {
-            return;
-        }
         if self.mod_browser_press(right) {
             return;
         }
@@ -11372,9 +11359,6 @@ impl Game<'_> {
         }
     }
     fn click_inventory(&mut self, right: bool) {
-        if self.click_bedrock_crafting(right) {
-            return;
-        }
         if self.mod_browser_press(right) || self.mount_click(right) {
             return;
         }
